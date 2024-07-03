@@ -44,7 +44,7 @@ dependencies:
   permission_handler:
   geolocator:
   image_picker:
-
+  flutter_geofire:
 
 dev_dependencies:
   flutter_test:
