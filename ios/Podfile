@@ -40,6 +40,7 @@ target 'Runner' do
   pod 'Firebase/Storage'
   pod 'GeoFire', :git => 'https://github.com/mrdishant/geofire-objc'
   pod 'Reachability', '~> 3.2'
+  pod 'Firebase/Messaging'
 
 end
 

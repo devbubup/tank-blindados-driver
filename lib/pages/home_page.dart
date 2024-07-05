@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:drivers_app/pushNotification/push_notification_system.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
@@ -25,7 +26,7 @@ class _HomePageState extends State<HomePage>
   GoogleMapController? controllerGoogleMap;
   Position? currentPositionOfUser;
   Color colorToShow = Colors.green;
-  String titleToShow = "GO ONLINE NOW";
+  String titleToShow = "FICAR ONLINE";
   bool isDriverAvailable = false;
   DatabaseReference? newTripRequestReference;
 
@@ -110,6 +111,18 @@ class _HomePageState extends State<HomePage>
     newTripRequestReference = null;
   }
 
+  initializePushNotificationSystem()
+  {
+    PushNotificationSystem notificationSystem = PushNotificationSystem();
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    initializePushNotificationSystem();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -181,7 +194,7 @@ class _HomePageState extends State<HomePage>
                                   const SizedBox(height:  11,),
 
                                   Text(
-                                    (!isDriverAvailable) ? "GO ONLINE NOW" : "GO OFFLINE NOW",
+                                    (!isDriverAvailable) ? "FICAR ONLINE" : "FICAR OFFLINE",
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
                                       fontSize: 22,
@@ -194,8 +207,8 @@ class _HomePageState extends State<HomePage>
 
                                   Text(
                                     (!isDriverAvailable)
-                                        ? "You are about to go online, you will become available to receive trip requests from users."
-                                        : "You are about to go offline, you will stop receiving new trip requests from users.",
+                                        ? "Você está prestes a ficar online, podendo receber notificação de novas corridas de usuários."
+                                        : "Você está prestes a ficar offline, parando de receber notificações de novas corridas de usuários",
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
                                       color: Colors.white30,
@@ -214,7 +227,7 @@ class _HomePageState extends State<HomePage>
                                             Navigator.pop(context);
                                           },
                                           child: const Text(
-                                              "BACK"
+                                              "VOLTAR"
                                           ),
                                         ),
                                       ),
@@ -237,7 +250,7 @@ class _HomePageState extends State<HomePage>
 
                                               setState(() {
                                                 colorToShow = Colors.pink;
-                                                titleToShow = "GO OFFLINE NOW";
+                                                titleToShow = "FICAR OFFLINE";
                                                 isDriverAvailable = true;
                                               });
                                             }
@@ -250,18 +263,18 @@ class _HomePageState extends State<HomePage>
 
                                               setState(() {
                                                 colorToShow = Colors.green;
-                                                titleToShow = "GO ONLINE NOW";
+                                                titleToShow = "FICAR ONLINE";
                                                 isDriverAvailable = false;
                                               });
                                             }
                                           },
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: (titleToShow == "GO ONLINE NOW")
+                                            backgroundColor: (titleToShow == "FICAR ONLINE")
                                                 ? Colors.green
                                                 : Colors.pink,
                                           ),
                                           child: const Text(
-                                              "CONFIRM"
+                                              "CONFIRMAR"
                                           ),
                                         ),
                                       ),

@@ -45,6 +45,7 @@ dependencies:
   geolocator:
   image_picker:
   flutter_geofire:
+  firebase_messaging:
 
 dev_dependencies:
   flutter_test:
