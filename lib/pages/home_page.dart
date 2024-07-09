@@ -20,8 +20,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage>
-{
+class _HomePageState extends State<HomePage> {
   final Completer<GoogleMapController> googleMapCompleterController = Completer<GoogleMapController>();
   GoogleMapController? controllerGoogleMap;
   Position? currentPositionOfUser;
@@ -30,26 +29,21 @@ class _HomePageState extends State<HomePage>
   bool isDriverAvailable = false;
   DatabaseReference? newTripRequestReference;
 
-
-  void updateMapTheme(GoogleMapController controller)
-  {
-    getJsonFileFromThemes("themes/night_style.json").then((value)=> setGoogleMapStyle(value, controller));
+  void updateMapTheme(GoogleMapController controller) {
+    getJsonFileFromThemes("themes/night_style.json").then((value) => setGoogleMapStyle(value, controller));
   }
 
-  Future<String> getJsonFileFromThemes(String mapStylePath) async
-  {
+  Future<String> getJsonFileFromThemes(String mapStylePath) async {
     ByteData byteData = await rootBundle.load(mapStylePath);
     var list = byteData.buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes);
     return utf8.decode(list);
   }
 
-  setGoogleMapStyle(String googleMapStyle, GoogleMapController controller)
-  {
+  setGoogleMapStyle(String googleMapStyle, GoogleMapController controller) {
     controller.setMapStyle(googleMapStyle);
   }
 
-  getCurrentLiveLocationOfDriver() async
-  {
+  getCurrentLiveLocationOfDriver() async {
     Position positionOfUser = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.bestForNavigation);
     currentPositionOfUser = positionOfUser;
 
@@ -59,8 +53,7 @@ class _HomePageState extends State<HomePage>
     controllerGoogleMap!.animateCamera(CameraUpdate.newCameraPosition(cameraPosition));
   }
 
-  goOnlineNow()
-  {
+  goOnlineNow() {
     //all drivers who are Available for new trip requests
     Geofire.initialize("onlineDrivers");
 
@@ -76,18 +69,15 @@ class _HomePageState extends State<HomePage>
         .child("newTripStatus");
     newTripRequestReference!.set("waiting");
 
-    newTripRequestReference!.onValue.listen((event) { });
+    newTripRequestReference!.onValue.listen((event) {});
   }
 
-  setAndGetLocationUpdates()
-  {
+  setAndGetLocationUpdates() {
     positionStreamHomePage = Geolocator.getPositionStream()
-        .listen((Position position)
-    {
+        .listen((Position position) {
       currentPositionOfUser = position;
 
-      if(isDriverAvailable == true)
-      {
+      if (isDriverAvailable == true) {
         Geofire.setLocation(
           FirebaseAuth.instance.currentUser!.uid,
           currentPositionOfUser!.latitude,
@@ -100,8 +90,7 @@ class _HomePageState extends State<HomePage>
     });
   }
 
-  goOfflineNow()
-  {
+  goOfflineNow() {
     //stop sharing driver live location updates
     Geofire.removeLocation(FirebaseAuth.instance.currentUser!.uid);
 
@@ -111,14 +100,12 @@ class _HomePageState extends State<HomePage>
     newTripRequestReference = null;
   }
 
-  initializePushNotificationSystem()
-  {
+  initializePushNotificationSystem() {
     PushNotificationSystem notificationSystem = PushNotificationSystem();
   }
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     initializePushNotificationSystem();
   }
@@ -135,8 +122,7 @@ class _HomePageState extends State<HomePage>
             mapType: MapType.normal,
             myLocationEnabled: true,
             initialCameraPosition: googlePlexInitialPosition,
-            onMapCreated: (GoogleMapController mapController)
-            {
+            onMapCreated: (GoogleMapController mapController) {
               controllerGoogleMap = mapController;
               updateMapTheme(controllerGoogleMap!);
 
@@ -162,18 +148,15 @@ class _HomePageState extends State<HomePage>
               children: [
 
                 ElevatedButton(
-                  onPressed: ()
-                  {
+                  onPressed: () {
                     showModalBottomSheet(
                         context: context,
                         isDismissible: false,
-                        builder: (BuildContext context)
-                        {
+                        builder: (BuildContext context) {
                           return Container(
                             decoration: const BoxDecoration(
                               color: Colors.black87,
-                              boxShadow:
-                              [
+                              boxShadow: [
                                 BoxShadow(
                                   color: Colors.grey,
                                   blurRadius: 5.0,
@@ -191,7 +174,7 @@ class _HomePageState extends State<HomePage>
                               child: Column(
                                 children: [
 
-                                  const SizedBox(height:  11,),
+                                  const SizedBox(height: 11,),
 
                                   Text(
                                     (!isDriverAvailable) ? "FICAR ONLINE" : "FICAR OFFLINE",
@@ -222,12 +205,19 @@ class _HomePageState extends State<HomePage>
 
                                       Expanded(
                                         child: ElevatedButton(
-                                          onPressed: ()
-                                          {
+                                          onPressed: () {
                                             Navigator.pop(context);
                                           },
                                           child: const Text(
-                                              "VOLTAR"
+                                            "VOLTAR",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.grey,
+                                            padding: const EdgeInsets.symmetric(vertical: 16),
                                           ),
                                         ),
                                       ),
@@ -236,10 +226,8 @@ class _HomePageState extends State<HomePage>
 
                                       Expanded(
                                         child: ElevatedButton(
-                                          onPressed: ()
-                                          {
-                                            if(!isDriverAvailable)
-                                            {
+                                          onPressed: () {
+                                            if (!isDriverAvailable) {
                                               //go online
                                               goOnlineNow();
 
@@ -253,9 +241,7 @@ class _HomePageState extends State<HomePage>
                                                 titleToShow = "FICAR OFFLINE";
                                                 isDriverAvailable = true;
                                               });
-                                            }
-                                            else
-                                            {
+                                            } else {
                                               //go offline
                                               goOfflineNow();
 
@@ -272,9 +258,14 @@ class _HomePageState extends State<HomePage>
                                             backgroundColor: (titleToShow == "FICAR ONLINE")
                                                 ? Colors.green
                                                 : Colors.pink,
+                                            padding: const EdgeInsets.symmetric(vertical: 16),
                                           ),
                                           child: const Text(
-                                              "CONFIRMAR"
+                                            "CONFIRMAR",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -291,9 +282,17 @@ class _HomePageState extends State<HomePage>
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: colorToShow,
+                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                   child: Text(
                     titleToShow,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
 
