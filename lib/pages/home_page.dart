@@ -171,7 +171,7 @@ class _HomePageState extends State<HomePage> {
                                 ),
                               ],
                             ),
-                            height: 221,
+                            height: 300,
                             child: Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
                               child: Column(
