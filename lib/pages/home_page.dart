@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
-
 import 'package:drivers_app/pushNotification/push_notification_system.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -23,31 +22,18 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final Completer<GoogleMapController> googleMapCompleterController = Completer<GoogleMapController>();
   GoogleMapController? controllerGoogleMap;
-  Position? currentPositionOfUser;
+  Position? currentPositionOfDriver;
   Color colorToShow = Colors.green;
   String titleToShow = "FICAR ONLINE";
   bool isDriverAvailable = false;
   DatabaseReference? newTripRequestReference;
 
-  void updateMapTheme(GoogleMapController controller) {
-    getJsonFileFromThemes("themes/night_style.json").then((value) => setGoogleMapStyle(value, controller));
-  }
-
-  Future<String> getJsonFileFromThemes(String mapStylePath) async {
-    ByteData byteData = await rootBundle.load(mapStylePath);
-    var list = byteData.buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes);
-    return utf8.decode(list);
-  }
-
-  setGoogleMapStyle(String googleMapStyle, GoogleMapController controller) {
-    controller.setMapStyle(googleMapStyle);
-  }
-
   getCurrentLiveLocationOfDriver() async {
     Position positionOfUser = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.bestForNavigation);
-    currentPositionOfUser = positionOfUser;
+    currentPositionOfDriver = positionOfUser;
+    driverCurrentPosition = currentPositionOfDriver;
 
-    LatLng positionOfUserInLatLng = LatLng(currentPositionOfUser!.latitude, currentPositionOfUser!.longitude);
+    LatLng positionOfUserInLatLng = LatLng(currentPositionOfDriver!.latitude, currentPositionOfDriver!.longitude);
 
     CameraPosition cameraPosition = CameraPosition(target: positionOfUserInLatLng, zoom: 15);
     controllerGoogleMap!.animateCamera(CameraUpdate.newCameraPosition(cameraPosition));
@@ -59,8 +45,8 @@ class _HomePageState extends State<HomePage> {
 
     Geofire.setLocation(
       FirebaseAuth.instance.currentUser!.uid,
-      currentPositionOfUser!.latitude,
-      currentPositionOfUser!.longitude,
+      currentPositionOfDriver!.latitude,
+      currentPositionOfDriver!.longitude,
     );
 
     newTripRequestReference = FirebaseDatabase.instance.ref()
@@ -75,13 +61,13 @@ class _HomePageState extends State<HomePage> {
   setAndGetLocationUpdates() {
     positionStreamHomePage = Geolocator.getPositionStream()
         .listen((Position position) {
-      currentPositionOfUser = position;
+      currentPositionOfDriver = position;
 
       if (isDriverAvailable == true) {
         Geofire.setLocation(
           FirebaseAuth.instance.currentUser!.uid,
-          currentPositionOfUser!.latitude,
-          currentPositionOfUser!.longitude,
+          currentPositionOfDriver!.latitude,
+          currentPositionOfDriver!.longitude,
         );
       }
 
@@ -103,11 +89,30 @@ class _HomePageState extends State<HomePage> {
   initializePushNotificationSystem() {
     PushNotificationSystem notificationSystem = PushNotificationSystem();
     notificationSystem.generateDeviceRegistrationToken();
+    notificationSystem.startListeningForNewNotification(context);
   }
 
   @override
   void initState() {
     super.initState();
+    initializePushNotificationSystem();
+  }
+
+  retrieveCurrentDriverInfo() async
+  {
+    await FirebaseDatabase.instance.ref()
+        .child("drivers")
+        .child(FirebaseAuth.instance.currentUser!.uid)
+        .once().then((snap)
+    {
+      driverName = (snap.snapshot.value as Map)["name"];
+      driverPhone = (snap.snapshot.value as Map)["phone"];
+      driverPhoto = (snap.snapshot.value as Map)["photo"];
+      carColor = (snap.snapshot.value as Map)["carDetails"]["carColor"];
+      carModel = (snap.snapshot.value as Map)["carDetails"]["carModel"];
+      carNumber = (snap.snapshot.value as Map)["carDetails"]["carNumber"];
+    });
+
     initializePushNotificationSystem();
   }
 
@@ -125,10 +130,7 @@ class _HomePageState extends State<HomePage> {
             initialCameraPosition: googlePlexInitialPosition,
             onMapCreated: (GoogleMapController mapController) {
               controllerGoogleMap = mapController;
-              updateMapTheme(controllerGoogleMap!);
-
               googleMapCompleterController.complete(controllerGoogleMap);
-
               getCurrentLiveLocationOfDriver();
             },
           ),

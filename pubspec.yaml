@@ -40,12 +40,17 @@ dependencies:
   firebase_auth:
   firebase_database:
   firebase_storage:
-  google_maps_flutter: ^2.1.1
+  google_maps_flutter:
   permission_handler:
   geolocator:
   image_picker:
   flutter_geofire:
   firebase_messaging:
+  assets_audio_player:
+  http:
+  flutter_polyline_points:
+  url_launcher:
+  restart_app:
 
 dev_dependencies:
   flutter_test:
@@ -72,7 +77,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/
-  #   - images/a_dot_ham.jpeg
+    - assets/audio/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
