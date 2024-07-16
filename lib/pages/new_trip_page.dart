@@ -43,7 +43,7 @@ class _NewTripPageState extends State<NewTripPage>
   bool directionRequested = false;
   String statusOfTrip = "accepted";
   String durationText = "", distanceText = "";
-  String buttonTitleText = "ARRIVED";
+  String buttonTitleText = "CHEGOU";
   Color buttonColor = Colors.indigoAccent;
   CommonMethods cMethods = CommonMethods();
 
@@ -270,7 +270,7 @@ class _NewTripPageState extends State<NewTripPage>
     showDialog(
       barrierDismissible: false,
       context: context,
-      builder: (BuildContext context) => LoadingDialog(messageText: 'Please wait...',),
+      builder: (BuildContext context) => LoadingDialog(messageText: 'Aguarde..',),
     );
 
     var driverCurrentLocationLatLng = LatLng(driverCurrentPosition!.latitude, driverCurrentPosition!.longitude);
@@ -431,7 +431,7 @@ class _NewTripPageState extends State<NewTripPage>
                   ),
                 ],
               ),
-              height: 256,
+              height: 300,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
                 child: Column(
@@ -551,7 +551,7 @@ class _NewTripPageState extends State<NewTripPage>
                           if(statusOfTrip == "accepted")
                           {
                             setState(() {
-                              buttonTitleText = "START TRIP";
+                              buttonTitleText = "INICIAR";
                               buttonColor = Colors.green;
                             });
 
@@ -565,7 +565,7 @@ class _NewTripPageState extends State<NewTripPage>
                             showDialog(
                                 barrierDismissible: false,
                                 context: context,
-                                builder: (BuildContext context) => LoadingDialog(messageText: 'Please wait...',)
+                                builder: (BuildContext context) => LoadingDialog(messageText: 'Aguarde...',)
                             );
 
                             await obtainDirectionAndDrawRoute(
@@ -579,7 +579,7 @@ class _NewTripPageState extends State<NewTripPage>
                           else if(statusOfTrip == "arrived")
                           {
                             setState(() {
-                              buttonTitleText = "END TRIP";
+                              buttonTitleText = "FINALIZAR";
                               buttonColor = Colors.amber;
                             });
 
