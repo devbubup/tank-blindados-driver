@@ -33,7 +33,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
           children: [
             const SizedBox(height: 21,),
             const Text(
-              "COLLECT CASH",
+              "Pegar Dinheiro",
               style: TextStyle(
                 color: Colors.grey,
               ),
@@ -57,7 +57,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
-                "This is fare amount ( \$ ${widget.fareAmount} ) to be charged from the user.",
+                "O valor de ( \$ ${widget.fareAmount} ) será cobrado do usuário.",
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: Colors.grey),
               ),
@@ -76,7 +76,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
                 backgroundColor: Colors.green,
               ),
               child: const Text(
-                "COLLECT CASH",
+                "Pegar Dinheiro",
               ),
             ),
             const SizedBox(height: 41,)
