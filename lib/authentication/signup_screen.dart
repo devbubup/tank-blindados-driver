@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import '../methods/common_methods.dart';
 import '../pages/dashboard.dart';
+import '../pages/home_page.dart';
 import '../widgets/loading_dialog.dart';
 import 'login_screen.dart';
 
@@ -239,7 +240,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         "email": emailTextEditingController.text.trim(),
         "phone": userPhoneTextEditingController.text.trim(),
         "id": userFirebase.uid,
-        "blockStatus": "no",
+        "blockStatus": "yes",
       };
 
       await usersRef.set(driverPersonalInfo);
@@ -322,17 +323,59 @@ class _SignUpScreenState extends State<SignUpScreen> {
         "cnh": documentFilesUrls['cnh'],
         "rg": documentFilesUrls['rg'],
         "toxicologico": documentFilesUrls['toxicologico'],
-        "renavam": documentFilesUrls['renavam'],  // URL do arquivo RENAVAM
+        "renavam": documentFilesUrls['renavam'],
       };
 
       await usersRef.update({"documents": driverDocumentsInfo});
+
+      // Mostrar notificação para o usuário após o upload completo
+      if (!context.mounted) return;
       Navigator.pop(context);
-      Navigator.push(context, MaterialPageRoute(builder: (c) => Dashboard()));
+
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            backgroundColor: Colors.grey[900],
+            title: Text(
+              "Conta em Verificação",
+              style: TextStyle(color: Colors.white),
+            ),
+            content: Text(
+              "Fique atento aos meios de contato inseridos, sua conta está sendo verificada e você receberá um retorno em breve.",
+              style: TextStyle(color: Colors.white70),
+              textAlign: TextAlign.justify,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8), // Bordas menos arredondadas
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Fechar a caixa de diálogo
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoginScreen()),
+                        (Route<dynamic> route) => false,
+                  ); // Redirecionar para a tela de login
+                },
+                child: Text(
+                  "OK",
+                  style: TextStyle(color: Colors.blueAccent),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+
+
     } catch (e) {
       Navigator.pop(context);
       cMethods.displaySnackBar("Erro no upload dos documentos: $e", context);
     }
   }
+
 
   chooseImageFromGallery() async {
     final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);

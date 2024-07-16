@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -13,19 +15,49 @@ class PushNotificationSystem
 {
   FirebaseMessaging firebaseCloudMessaging = FirebaseMessaging.instance;
 
-  Future<String?> generateDeviceRegistrationToken() async
-  {
-    String? deviceRecognitionToken = await firebaseCloudMessaging.getToken();
+  Future<void> generateDeviceRegistrationToken() async {
+    // Solicita permissão para notificações
+    NotificationSettings settings = await firebaseCloudMessaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+      provisional: false,
+    );
+    print("Permissão de notificação concedida: ${settings.authorizationStatus}");
 
-    DatabaseReference referenceOnlineDriver = FirebaseDatabase.instance.ref()
-        .child("drivers")
-        .child(FirebaseAuth.instance.currentUser!.uid)
-        .child("deviceToken");
+    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+      // Aguarda a obtenção do token APNS
+      String? apnsToken = await firebaseCloudMessaging.getAPNSToken();
+      print("APNS Token: $apnsToken");
 
-    referenceOnlineDriver.set(deviceRecognitionToken);
+      if (apnsToken != null) {
+        // Aguarda a obtenção do token Firebase
+        String? deviceToken = await firebaseCloudMessaging.getToken();
+        print("Firebase Token: $deviceToken");
 
-    firebaseCloudMessaging.subscribeToTopic("drivers");
-    firebaseCloudMessaging.subscribeToTopic("users");
+        if (deviceToken != null) {
+          try {
+            DatabaseReference tokenRef = FirebaseDatabase.instance.ref()
+                .child("drivers")
+                .child(FirebaseAuth.instance.currentUser!.uid)
+                .child("deviceToken");
+
+            await tokenRef.set(deviceToken);
+            print("Token salvo com sucesso.");
+            firebaseCloudMessaging.subscribeToTopic("drivers");
+            firebaseCloudMessaging.subscribeToTopic("users");
+          } catch (e) {
+            print("Erro ao salvar token: $e");
+          }
+        } else {
+          print("Token de dispositivo Firebase é nulo.");
+        }
+      } else {
+        print("APNS token é nulo. Verifique as configurações de notificação e certificados.");
+      }
+    } else {
+      print("Autorização de notificação não concedida.");
+    }
   }
 
   startListeningForNewNotification(BuildContext context) async
