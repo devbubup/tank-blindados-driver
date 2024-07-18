@@ -55,7 +55,11 @@ class _HomePageState extends State<HomePage> {
         .child("newTripStatus");
     newTripRequestReference!.set("waiting");
 
-    newTripRequestReference!.onValue.listen((event) {});
+    newTripRequestReference!.onValue.listen((event) {
+      if(event.snapshot.value != null) {
+        saveDriverInfoToDatabase();
+      }
+    });
   }
 
   setAndGetLocationUpdates() {
@@ -96,21 +100,40 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     initializePushNotificationSystem();
+    retrieveCurrentDriverInfo();
   }
 
-  retrieveCurrentDriverInfo() async
-  {
+  saveDriverInfoToDatabase() async {
+    DatabaseReference driverRef = FirebaseDatabase.instance.ref()
+        .child("drivers")
+        .child(FirebaseAuth.instance.currentUser!.uid)
+        .child("tripDetails");
+
+    Map driverTripDataMap = {
+      "name": driverName,
+      "phone": driverPhone,
+      "photo": driverPhoto,
+      "carDetails": {
+        "carColor": carColor,
+        "carModel": carModel,
+        "carNumber": carNumber,
+      }
+    };
+
+    driverRef.set(driverTripDataMap);
+  }
+
+  retrieveCurrentDriverInfo() async {
     await FirebaseDatabase.instance.ref()
         .child("drivers")
         .child(FirebaseAuth.instance.currentUser!.uid)
-        .once().then((snap)
-    {
+        .once().then((snap) {
       driverName = (snap.snapshot.value as Map)["name"];
       driverPhone = (snap.snapshot.value as Map)["phone"];
       driverPhoto = (snap.snapshot.value as Map)["photo"];
-      carColor = (snap.snapshot.value as Map)["carDetails"]["carColor"];
-      carModel = (snap.snapshot.value as Map)["carDetails"]["carModel"];
-      carNumber = (snap.snapshot.value as Map)["carDetails"]["carNumber"];
+      carColor = (snap.snapshot.value as Map)["car_details"]["carColor"];
+      carModel = (snap.snapshot.value as Map)["car_details"]["carModel"];
+      carNumber = (snap.snapshot.value as Map)["car_details"]["carNumber"];
     });
 
     initializePushNotificationSystem();
