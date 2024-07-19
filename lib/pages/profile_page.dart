@@ -51,6 +51,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     fit: BoxFit.cover,
                     image: NetworkImage(driverPhoto),
                   ),
+                  border: Border.all(
+                    color: Colors.white,
+                    width: 2,
+                  ),
                 ),
               ),
 
@@ -69,7 +73,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     fillColor: Colors.black54,
                     border: OutlineInputBorder(
                       borderSide: const BorderSide(color: Colors.white, width: 2),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(4), // Menos arredondado
                     ),
                     prefixIcon: const Icon(Icons.person, color: Colors.white),
                   ),
@@ -89,7 +93,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     fillColor: Colors.black54,
                     border: OutlineInputBorder(
                       borderSide: const BorderSide(color: Colors.white, width: 2),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(4), // Menos arredondado
                     ),
                     prefixIcon: const Icon(Icons.phone_android_outlined, color: Colors.white),
                   ),
@@ -109,7 +113,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     fillColor: Colors.black54,
                     border: OutlineInputBorder(
                       borderSide: const BorderSide(color: Colors.white, width: 2),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(4), // Menos arredondado
                     ),
                     prefixIcon: const Icon(Icons.email, color: Colors.white),
                   ),
@@ -129,7 +133,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     fillColor: Colors.black54,
                     border: OutlineInputBorder(
                       borderSide: const BorderSide(color: Colors.white, width: 2),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(4), // Menos arredondado
                     ),
                     prefixIcon: const Icon(Icons.drive_eta_rounded, color: Colors.white),
                   ),
@@ -148,7 +152,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   backgroundColor: Colors.blue.shade900,
                   padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 18),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(4), // Menos arredondado
                   ),
                 ),
                 child: const Text(

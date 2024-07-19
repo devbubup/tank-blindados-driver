@@ -65,9 +65,8 @@ class _NotificationDialogState extends State<NotificationDialog> {
     showDialog(
       barrierDismissible: false,
       context: context,
-      builder: (BuildContext context) => LoadingDialog(messageText: 'please wait...'),
+      builder: (BuildContext context) => LoadingDialog(messageText: 'Aguarde...'),
     );
-    print("Loading dialog shown");
 
     DatabaseReference driverTripStatusRef = FirebaseDatabase.instance
         .ref()
@@ -131,7 +130,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
             ),
             const SizedBox(height: 16.0),
             const Text(
-              "NEW TRIP REQUEST",
+              "NOVA PROPOSTA DE CORRIDA",
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
@@ -220,7 +219,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
                         backgroundColor: Colors.pink,
                       ),
                       child: const Text(
-                        "DECLINE",
+                        "RECUSAR",
                         style: TextStyle(
                           color: Colors.white,
                         ),
@@ -242,7 +241,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
                         backgroundColor: Colors.green,
                       ),
                       child: const Text(
-                        "ACCEPT",
+                        "ACEITAR",
                         style: TextStyle(
                           color: Colors.white,
                         ),

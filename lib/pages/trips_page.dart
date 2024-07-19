@@ -54,7 +54,7 @@ class _TripsPageState extends State<TripsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Trips Page"),
+        title: Text("Informações User"),
       ),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -71,7 +71,7 @@ class _TripsPageState extends State<TripsPage> {
                     Image.asset("assets/images/totaltrips.png", width: 120),
                     const SizedBox(height: 10),
                     const Text(
-                      "Total Trips:",
+                      "Total de Viagens:",
                       style: TextStyle(
                         color: Colors.white,
                       ),
@@ -109,7 +109,7 @@ class _TripsPageState extends State<TripsPage> {
                       Image.asset("assets/images/tripscompleted.png", width: 150),
                       const SizedBox(height: 10),
                       const Text(
-                        "Check Trips History",
+                        "Verifique Histórico de Viagens",
                         style: TextStyle(
                           color: Colors.white,
                         ),

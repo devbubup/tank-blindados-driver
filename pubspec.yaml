@@ -52,6 +52,7 @@ dependencies:
   url_launcher:
   restart_app:
   file_picker:
+  flutter_image:
 
 dev_dependencies:
   flutter_test:

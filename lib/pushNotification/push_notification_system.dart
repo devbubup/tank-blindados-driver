@@ -57,7 +57,6 @@ class PushNotificationSystem {
 
   retrieveTripRequestInfo(String tripID, BuildContext context) {
     if (isTripInProgress) {
-      print("Trip is already in progress. Ignoring new trip request.");
       return;
     }
 
@@ -66,7 +65,7 @@ class PushNotificationSystem {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) => LoadingDialog(messageText: "Getting details..."),
+      builder: (BuildContext context) => LoadingDialog(messageText: "Coletando detalhes..."),
     );
 
     DatabaseReference tripRequestsRef = FirebaseDatabase.instance.ref().child("tripRequests").child(tripID);
@@ -88,9 +87,9 @@ class PushNotificationSystem {
         double dropOffLng = double.tryParse(dropOffLatLng["longitude"]?.toString() ?? '0.0') ?? 0.0;
 
         tripDetailsInfo.pickUpLatLng = LatLng(pickUpLat, pickUpLng);
-        tripDetailsInfo.pickupAddress = valueMap["pickUpAddress"] ?? "Unknown address";
+        tripDetailsInfo.pickupAddress = valueMap["pickUpAddress"] ?? "Endereço Desconhecido";
         tripDetailsInfo.dropOffLatLng = LatLng(dropOffLat, dropOffLng);
-        tripDetailsInfo.dropOffAddress = valueMap["dropOffAddress"] ?? "Unknown address";
+        tripDetailsInfo.dropOffAddress = valueMap["dropOffAddress"] ?? "Endereço Deconhecido";
         tripDetailsInfo.userName = valueMap["userName"] ?? "Unknown user";
         tripDetailsInfo.userPhone = valueMap["userPhone"] ?? "Unknown phone";
         tripDetailsInfo.tripID = tripID;
@@ -107,8 +106,8 @@ class PushNotificationSystem {
         showDialog(
           context: context,
           builder: (BuildContext context) => AlertDialog(
-            title: Text('Error'),
-            content: Text('Failed to retrieve trip details.'),
+            title: Text('Erro'),
+            content: Text('Falha nas informações da viagem.'),
             actions: [
               TextButton(
                 child: Text('OK'),
