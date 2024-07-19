@@ -10,6 +10,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+// Variável global para monitorar o estado da corrida
+bool isTripInProgress = false;
+
 class PushNotificationSystem {
   FirebaseMessaging firebaseCloudMessaging = FirebaseMessaging.instance;
 
@@ -53,6 +56,13 @@ class PushNotificationSystem {
   }
 
   retrieveTripRequestInfo(String tripID, BuildContext context) {
+    if (isTripInProgress) {
+      print("Trip is already in progress. Ignoring new trip request.");
+      return;
+    }
+
+    isTripInProgress = true;
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -88,7 +98,10 @@ class PushNotificationSystem {
         showDialog(
           context: context,
           builder: (BuildContext context) => NotificationDialog(tripDetailsInfo: tripDetailsInfo),
-        );
+        ).then((_) {
+          // Reset the trip in progress status when the notification dialog is dismissed
+          isTripInProgress = false;
+        });
       } else {
         // Handle null case appropriately, e.g., show an error dialog
         showDialog(
@@ -99,7 +112,10 @@ class PushNotificationSystem {
             actions: [
               TextButton(
                 child: Text('OK'),
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  isTripInProgress = false;
+                },
               ),
             ],
           ),
@@ -115,7 +131,10 @@ class PushNotificationSystem {
           actions: [
             TextButton(
               child: Text('OK'),
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () {
+                Navigator.of(context).pop();
+                isTripInProgress = false;
+              },
             ),
           ],
         ),

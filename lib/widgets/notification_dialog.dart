@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:drivers_app/global/global_var.dart';
 import 'package:drivers_app/methods/common_methods.dart';
 import 'package:drivers_app/models/trip_details.dart';
@@ -7,112 +6,109 @@ import 'package:drivers_app/pages/new_trip_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-
 import 'loading_dialog.dart';
 
-class NotificationDialog extends StatefulWidget
-{
-  TripDetails? tripDetailsInfo;
+class NotificationDialog extends StatefulWidget {
+  final TripDetails? tripDetailsInfo;
 
-  NotificationDialog({super.key, this.tripDetailsInfo,});
+  const NotificationDialog({super.key, this.tripDetailsInfo});
 
   @override
   State<NotificationDialog> createState() => _NotificationDialogState();
 }
 
-class _NotificationDialogState extends State<NotificationDialog>
-{
+class _NotificationDialogState extends State<NotificationDialog> {
   String tripRequestStatus = "";
   CommonMethods cMethods = CommonMethods();
+  Timer? countdownTimer;
 
-  cancelNotificationDialogAfter20Sec()
-  {
-    const oneTickPerSecond = Duration(seconds: 1);
+  @override
+  void initState() {
+    super.initState();
+    print("NotificationDialog initState called");
+    cancelNotificationDialogAfter20Sec();
+  }
 
-    var timerCountDown = Timer.periodic(oneTickPerSecond, (timer)
-    {
-      driverTripRequestTimeout = driverTripRequestTimeout - 1;
+  void cancelNotificationDialogAfter20Sec() {
+    const duration = Duration(seconds: 1);
 
-      if(tripRequestStatus == "accepted")
-      {
+    countdownTimer = Timer.periodic(duration, (timer) {
+      if (!mounted) return;
+
+      setState(() {
+        driverTripRequestTimeout--;
+      });
+
+      if (tripRequestStatus == "accepted" || driverTripRequestTimeout == 0) {
         timer.cancel();
-        driverTripRequestTimeout = 20;
-      }
-
-      if(driverTripRequestTimeout == 0)
-      {
-        Navigator.pop(context);
-        timer.cancel();
-        driverTripRequestTimeout = 20;
-        audioPlayer.stop();
+        if (driverTripRequestTimeout == 0 && mounted) {
+          Navigator.pop(context);
+          audioPlayer.stop();
+        }
+        setState(() {
+          driverTripRequestTimeout = 20;
+        });
       }
     });
   }
 
   @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-
-    cancelNotificationDialogAfter20Sec();
+  void dispose() {
+    countdownTimer?.cancel();
+    super.dispose();
+    print("NotificationDialog disposed");
   }
 
-  checkAvailabilityOfTripRequest(BuildContext context) async
-  {
+  Future<void> checkAvailabilityOfTripRequest(BuildContext context) async {
+    if (!mounted) return;
+
     showDialog(
       barrierDismissible: false,
       context: context,
-      builder: (BuildContext context) => LoadingDialog(messageText: 'please wait...',),
+      builder: (BuildContext context) => LoadingDialog(messageText: 'please wait...'),
     );
+    print("Loading dialog shown");
 
-    DatabaseReference driverTripStatusRef = FirebaseDatabase.instance.ref()
+    DatabaseReference driverTripStatusRef = FirebaseDatabase.instance
+        .ref()
         .child("drivers")
         .child(FirebaseAuth.instance.currentUser!.uid)
         .child("newTripStatus");
 
-    await driverTripStatusRef.once()
-        .then((snap)
-    {
-      Navigator.pop(context);
-      Navigator.pop(context);
+    final snap = await driverTripStatusRef.once();
 
-      String newTripStatusValue = "";
-      if(snap.snapshot.value != null)
-      {
-        newTripStatusValue = snap.snapshot.value.toString();
-      }
-      else
-      {
-        cMethods.displaySnackBar("Trip Request Not Found.", context);
-      }
+    if (!mounted) return;
 
-      if(newTripStatusValue == widget.tripDetailsInfo!.tripID)
-      {
-        driverTripStatusRef.set("accepted");
+    Navigator.pop(context);
+    print("Loading dialog dismissed");
 
-        //disable homepage location updates
-        cMethods.turnOffLocationUpdatesForHomePage();
+    String newTripStatusValue = snap.snapshot.value?.toString() ?? "";
 
-        Navigator.push(context, MaterialPageRoute(builder: (c)=> NewTripPage(newTripDetailsInfo: widget.tripDetailsInfo)));
-      }
-      else if(newTripStatusValue == "cancelled")
-      {
-        cMethods.displaySnackBar("Trip Request has been Cancelled by user.", context);
-      }
-      else if(newTripStatusValue == "timeout")
-      {
-        cMethods.displaySnackBar("Trip Request timed out.", context);
-      }
-      else
-      {
-        cMethods.displaySnackBar("Trip Request removed. Not Found.", context);
-      }
-    });
+    if (newTripStatusValue.isEmpty) {
+      print("Trip request not found");
+      cMethods.displaySnackBar("Trip Request Not Found.", context);
+    } else if (newTripStatusValue == widget.tripDetailsInfo!.tripID) {
+      print("Trip request accepted");
+      driverTripStatusRef.set("accepted");
+      cMethods.turnOffLocationUpdatesForHomePage();
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => NewTripPage(newTripDetailsInfo: widget.tripDetailsInfo)),
+      );
+    } else if (newTripStatusValue == "cancelled") {
+      print("Trip request cancelled by user");
+      cMethods.displaySnackBar("Trip Request has been Cancelled by user.", context);
+    } else if (newTripStatusValue == "timeout") {
+      print("Trip request timed out");
+      cMethods.displaySnackBar("Trip Request timed out.", context);
+    } else {
+      print("Trip request removed");
+      cMethods.displaySnackBar("Trip Request removed. Not Found.", context);
+    }
   }
 
   @override
-  Widget build(BuildContext context)
-  {
+  Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -128,17 +124,12 @@ class _NotificationDialogState extends State<NotificationDialog>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-
-            const SizedBox(height: 30.0,),
-
+            const SizedBox(height: 30.0),
             Image.asset(
               "assets/images/uberexec.png",
               width: 140,
             ),
-
-            const SizedBox(height: 16.0,),
-
-            //title
+            const SizedBox(height: 16.0),
             const Text(
               "NEW TRIP REQUEST",
               style: TextStyle(
@@ -147,36 +138,26 @@ class _NotificationDialogState extends State<NotificationDialog>
                 color: Colors.grey,
               ),
             ),
-
-            const  SizedBox(height: 20.0,),
-
+            const SizedBox(height: 20.0),
             const Divider(
               height: 1,
               color: Colors.white,
               thickness: 1,
             ),
-
-            const SizedBox(height: 10.0,),
-
-            //pick - dropoff
+            const SizedBox(height: 10.0),
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-
-                  //pickup
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-
                       Image.asset(
                         "assets/images/initial.png",
                         height: 16,
                         width: 16,
                       ),
-
-                      const SizedBox(width: 18,),
-
+                      const SizedBox(width: 18),
                       Expanded(
                         child: Text(
                           widget.tripDetailsInfo!.pickupAddress.toString(),
@@ -188,25 +169,18 @@ class _NotificationDialogState extends State<NotificationDialog>
                           ),
                         ),
                       ),
-
                     ],
                   ),
-
-                  const SizedBox(height: 15,),
-
-                  //dropoff
+                  const SizedBox(height: 15),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-
                       Image.asset(
                         "assets/images/final.png",
                         height: 16,
                         width: 16,
                       ),
-
-                      const SizedBox(width: 18,),
-
+                      const SizedBox(width: 18),
                       Expanded(
                         child: Text(
                           widget.tripDetailsInfo!.dropOffAddress.toString(),
@@ -218,37 +192,29 @@ class _NotificationDialogState extends State<NotificationDialog>
                           ),
                         ),
                       ),
-
                     ],
                   ),
-
                 ],
               ),
             ),
-
-            const SizedBox(height: 20,),
-
+            const SizedBox(height: 20),
             const Divider(
               height: 1,
               color: Colors.white,
               thickness: 1,
             ),
-
-            const SizedBox(height: 8,),
-
-            //decline btn - accept btn
+            const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.all(20.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: ()
-                      {
+                      onPressed: () {
                         Navigator.pop(context);
                         audioPlayer.stop();
+                        print("Trip request declined");
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.pink,
@@ -261,20 +227,16 @@ class _NotificationDialogState extends State<NotificationDialog>
                       ),
                     ),
                   ),
-
-                  const SizedBox(width: 10,),
-
+                  const SizedBox(width: 10),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: ()
-                      {
+                      onPressed: () {
                         audioPlayer.stop();
-
                         setState(() {
                           tripRequestStatus = "accepted";
                         });
-
                         checkAvailabilityOfTripRequest(context);
+                        print("Trip request accepted button pressed");
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
@@ -287,13 +249,10 @@ class _NotificationDialogState extends State<NotificationDialog>
                       ),
                     ),
                   ),
-
                 ],
               ),
             ),
-
-            const SizedBox(height: 10.0,),
-
+            const SizedBox(height: 10.0),
           ],
         ),
       ),

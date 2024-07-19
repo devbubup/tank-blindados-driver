@@ -1,16 +1,13 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:typed_data';
-import 'package:drivers_app/pushNotification/push_notification_system.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_geofire/flutter_geofire.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../global/global_var.dart';
+import '../pushNotification/push_notification_system.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -27,6 +24,7 @@ class _HomePageState extends State<HomePage> {
   String titleToShow = "FICAR ONLINE";
   bool isDriverAvailable = false;
   DatabaseReference? newTripRequestReference;
+  late StreamSubscription<DatabaseEvent> tripStatusSubscription;
 
   getCurrentLiveLocationOfDriver() async {
     Position positionOfUser = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.bestForNavigation);
@@ -37,42 +35,50 @@ class _HomePageState extends State<HomePage> {
 
     CameraPosition cameraPosition = CameraPosition(target: positionOfUserInLatLng, zoom: 15);
     controllerGoogleMap!.animateCamera(CameraUpdate.newCameraPosition(cameraPosition));
+    print("Current live location of driver obtained: $positionOfUserInLatLng");
   }
 
   goOnlineNow() {
-    //all drivers who are Available for new trip requests
+    print("Attempting to go online...");
     Geofire.initialize("onlineDrivers");
 
     Geofire.setLocation(
       FirebaseAuth.instance.currentUser!.uid,
       currentPositionOfDriver!.latitude,
       currentPositionOfDriver!.longitude,
-    );
+    ).then((_) {
+      print("Driver is now online and location saved successfully!");
+    });
 
     newTripRequestReference = FirebaseDatabase.instance.ref()
         .child("drivers")
         .child(FirebaseAuth.instance.currentUser!.uid)
         .child("newTripStatus");
     newTripRequestReference!.set("waiting");
+    print("Driver newTripStatus set to waiting");
 
-    newTripRequestReference!.onValue.listen((event) {
-      if(event.snapshot.value != null) {
+    tripStatusSubscription = newTripRequestReference!.onValue.listen((event) {
+      if (event.snapshot.value != null) {
         saveDriverInfoToDatabase();
+        print("New trip request received");
       }
     });
   }
 
   setAndGetLocationUpdates() {
+    print("Setting and getting location updates...");
     positionStreamHomePage = Geolocator.getPositionStream()
         .listen((Position position) {
       currentPositionOfDriver = position;
 
-      if (isDriverAvailable == true) {
+      if (isDriverAvailable) {
         Geofire.setLocation(
           FirebaseAuth.instance.currentUser!.uid,
           currentPositionOfDriver!.latitude,
           currentPositionOfDriver!.longitude,
-        );
+        ).then((_) {
+          print("Updated driver location: $currentPositionOfDriver");
+        });
       }
 
       LatLng positionLatLng = LatLng(position.latitude, position.longitude);
@@ -81,12 +87,13 @@ class _HomePageState extends State<HomePage> {
   }
 
   goOfflineNow() {
-    //stop sharing driver live location updates
-    Geofire.removeLocation(FirebaseAuth.instance.currentUser!.uid);
+    print("Attempting to go offline...");
+    Geofire.removeLocation(FirebaseAuth.instance.currentUser!.uid).then((_) {
+      print("Driver is now offline and location removed successfully!");
+    });
 
-    //stop listening to the newTripStatus
-    newTripRequestReference!.onDisconnect();
-    newTripRequestReference!.remove();
+    newTripRequestReference?.onDisconnect();
+    newTripRequestReference?.remove();
     newTripRequestReference = null;
   }
 
@@ -94,6 +101,7 @@ class _HomePageState extends State<HomePage> {
     PushNotificationSystem notificationSystem = PushNotificationSystem();
     notificationSystem.generateDeviceRegistrationToken();
     notificationSystem.startListeningForNewNotification(context);
+    print("Push notification system initialized");
   }
 
   @override
@@ -101,6 +109,59 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     initializePushNotificationSystem();
     retrieveCurrentDriverInfo();
+    listenForTripCompletion();
+    print("HomePage initState called");
+  }
+
+  @override
+  void dispose() {
+    tripStatusSubscription.cancel();
+    positionStreamHomePage?.cancel();
+    super.dispose();
+    print("HomePage disposed");
+  }
+
+  void listenForTripCompletion() {
+    print("Listening for trip completion...");
+    newTripRequestReference = FirebaseDatabase.instance.ref()
+        .child("drivers")
+        .child(FirebaseAuth.instance.currentUser!.uid)
+        .child("newTripStatus");
+
+    tripStatusSubscription = newTripRequestReference!.onValue.listen((event) {
+      String? tripStatus = event.snapshot.value?.toString();
+      print("Trip status updated: $tripStatus");
+      if (tripStatus == "ended") {
+        print("Trip has ended, calling resetHomePageState()");
+        resetHomePageState();
+      } else if (tripStatus != null) {
+        print("Trip status is not ended: $tripStatus");
+      } else {
+        print("Trip status is null");
+      }
+    });
+  }
+
+  void resetHomePageState() {
+    print("Resetting HomePage state after trip ended.");
+
+    if (isDriverAvailable) {
+      goOfflineNow(); // Vai offline automaticamente quando a corrida termina
+      setState(() {
+        isDriverAvailable = false;
+        colorToShow = Colors.green;
+        titleToShow = "FICAR ONLINE";
+        print("Driver state set to offline");
+      });
+    }
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const HomePage()),
+          (Route<dynamic> route) => false,
+    ).then((_) {
+      print("Navigated to HomePage after trip ended");
+    });
   }
 
   saveDriverInfoToDatabase() async {
@@ -120,10 +181,13 @@ class _HomePageState extends State<HomePage> {
       }
     };
 
-    driverRef.set(driverTripDataMap);
+    driverRef.set(driverTripDataMap).then((_) {
+      print("Driver trip details saved to database");
+    });
   }
 
   retrieveCurrentDriverInfo() async {
+    print("Retrieving current driver info...");
     await FirebaseDatabase.instance.ref()
         .child("drivers")
         .child(FirebaseAuth.instance.currentUser!.uid)
@@ -134,6 +198,7 @@ class _HomePageState extends State<HomePage> {
       carColor = (snap.snapshot.value as Map)["car_details"]["carColor"];
       carModel = (snap.snapshot.value as Map)["car_details"]["carModel"];
       carNumber = (snap.snapshot.value as Map)["car_details"]["carNumber"];
+      print("Driver info retrieved: $driverName, $driverPhone");
     });
 
     initializePushNotificationSystem();
@@ -144,7 +209,6 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       body: Stack(
         children: [
-
           ///google map
           GoogleMap(
             padding: const EdgeInsets.only(top: 136),
@@ -155,6 +219,7 @@ class _HomePageState extends State<HomePage> {
               controllerGoogleMap = mapController;
               googleMapCompleterController.complete(controllerGoogleMap);
               getCurrentLiveLocationOfDriver();
+              print("Google Map created");
             },
           ),
 
@@ -172,7 +237,6 @@ class _HomePageState extends State<HomePage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-
                 ElevatedButton(
                   onPressed: () {
                     showModalBottomSheet(
@@ -199,9 +263,7 @@ class _HomePageState extends State<HomePage> {
                               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
                               child: Column(
                                 children: [
-
                                   const SizedBox(height: 11,),
-
                                   Text(
                                     (!isDriverAvailable) ? "FICAR ONLINE" : "FICAR OFFLINE",
                                     textAlign: TextAlign.center,
@@ -211,9 +273,7 @@ class _HomePageState extends State<HomePage> {
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-
                                   const SizedBox(height: 21,),
-
                                   Text(
                                     (!isDriverAvailable)
                                         ? "Você está prestes a ficar online, podendo receber notificação de novas corridas de usuários."
@@ -223,16 +283,14 @@ class _HomePageState extends State<HomePage> {
                                       color: Colors.white30,
                                     ),
                                   ),
-
                                   const SizedBox(height: 25,),
-
                                   Row(
                                     children: [
-
                                       Expanded(
                                         child: ElevatedButton(
                                           onPressed: () {
                                             Navigator.pop(context);
+                                            print("Back button pressed");
                                           },
                                           child: const Text(
                                             "VOLTAR",
@@ -247,16 +305,13 @@ class _HomePageState extends State<HomePage> {
                                           ),
                                         ),
                                       ),
-
                                       const SizedBox(width: 16,),
-
                                       Expanded(
                                         child: ElevatedButton(
                                           onPressed: () {
                                             if (!isDriverAvailable) {
                                               //go online
                                               goOnlineNow();
-
                                               //get driver location updates
                                               setAndGetLocationUpdates();
 
@@ -266,6 +321,7 @@ class _HomePageState extends State<HomePage> {
                                                 colorToShow = Colors.pink;
                                                 titleToShow = "FICAR OFFLINE";
                                                 isDriverAvailable = true;
+                                                print("Driver state set to online");
                                               });
                                             } else {
                                               //go offline
@@ -277,6 +333,7 @@ class _HomePageState extends State<HomePage> {
                                                 colorToShow = Colors.green;
                                                 titleToShow = "FICAR ONLINE";
                                                 isDriverAvailable = false;
+                                                print("Driver state set to offline");
                                               });
                                             }
                                           },
@@ -295,10 +352,8 @@ class _HomePageState extends State<HomePage> {
                                           ),
                                         ),
                                       ),
-
                                     ],
                                   ),
-
                                 ],
                               ),
                             ),
@@ -321,11 +376,9 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
-
               ],
             ),
           ),
-
         ],
       ),
     );
