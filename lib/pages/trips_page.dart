@@ -11,7 +11,7 @@ class TripsPage extends StatefulWidget {
 }
 
 class _TripsPageState extends State<TripsPage> {
-  String currentDriverTotalTripsCompleted = "";
+  String currentDriverTotalTripsCompleted = "0";
 
   @override
   void initState() {
@@ -27,26 +27,27 @@ class _TripsPageState extends State<TripsPage> {
 
       if (snap.snapshot.value != null) {
         Map<dynamic, dynamic> allTripsMap = snap.snapshot.value as Map;
-        int allTripsLength = allTripsMap.length;
-
         List<String> tripsCompletedByCurrentDriver = [];
 
         allTripsMap.forEach((key, value) {
-          if (value["status"] != null) {
-            if (value["status"] == "ended") {
-              if (value["driverI D"] == FirebaseAuth.instance.currentUser!.uid) {
-                tripsCompletedByCurrentDriver.add(key);
-              }
-            }
+          if (value["status"] != null && value["status"] == "ended" && value["driverID"] == FirebaseAuth.instance.currentUser!.uid) {
+            tripsCompletedByCurrentDriver.add(key);
           }
         });
 
         setState(() {
           currentDriverTotalTripsCompleted = tripsCompletedByCurrentDriver.length.toString();
         });
+      } else {
+        setState(() {
+          currentDriverTotalTripsCompleted = "0";
+        });
       }
     } catch (e) {
       print("Error fetching trip data: $e");
+      setState(() {
+        currentDriverTotalTripsCompleted = "0";
+      });
     }
   }
 
@@ -54,7 +55,7 @@ class _TripsPageState extends State<TripsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Informações User"),
+        title: const Text("Informações do Motorista"),
       ),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,

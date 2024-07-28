@@ -17,7 +17,7 @@ class _TripsHistoryPageState extends State<TripsHistoryPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'My Completed Trips',
+          'Histórico de Corridas',
           style: TextStyle(
             color: Colors.white,
           ),

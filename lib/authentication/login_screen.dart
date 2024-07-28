@@ -22,8 +22,8 @@ class _LoginScreenState extends State<LoginScreen> {
   checkIfNetworkIsAvailable() {
     signInFormValidation();
   }
-
   signInFormValidation() {
+
     if (!emailTextEditingController.text.contains("@")) {
       cMethods.displaySnackBar("Insira um email válido.", context);
     } else if (passwordTextEditingController.text.trim().length < 5) {

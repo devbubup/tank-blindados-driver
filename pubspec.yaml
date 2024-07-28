@@ -53,6 +53,7 @@ dependencies:
   restart_app:
   file_picker:
   flutter_image:
+  flutter_image_compress:
 
 dev_dependencies:
   flutter_test:

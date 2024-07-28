@@ -23,11 +23,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   TextEditingController userPhoneTextEditingController = TextEditingController();
   TextEditingController emailTextEditingController = TextEditingController();
   TextEditingController passwordTextEditingController = TextEditingController();
-  TextEditingController vehicleModelTextEditingController = TextEditingController();
-  TextEditingController vehicleColorTextEditingController = TextEditingController();
   TextEditingController vehicleNumberTextEditingController = TextEditingController();
-  TextEditingController vehicleYearTextEditingController = TextEditingController(); // Campo para o ano do carro
-  TextEditingController renavamTextEditingController = TextEditingController(); // Campo para RENAVAM
+  TextEditingController renavamTextEditingController = TextEditingController();
   CommonMethods cMethods = CommonMethods();
   XFile? imageFile;
   String urlOfUploadedImage = "";
@@ -57,7 +54,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     'cnh': null,
     'rg': null,
     'toxicologico': null,
-    'renavam': null,  // Campo para arquivo RENAVAM
+    'renavam': null,
   };
 
   Map<String, String> documentFilesUrls = {
@@ -67,12 +64,62 @@ class _SignUpScreenState extends State<SignUpScreen> {
     'cnh': '',
     'rg': '',
     'toxicologico': '',
-    'renavam': '',  // URL do arquivo RENAVAM
+    'renavam': '',
   };
 
   String? selectedServiceType;
+  String? selectedBrand;
+  String? selectedYear;
+  String? selectedColor;
   int _currentPageIndex = 0;
   PageController _pageController = PageController();
+
+  Map<String, List<String>> serviceCategories = {
+    'SEDAN EXECUTIVO': ['CHEVROLET CRUZE', 'NISSAN SENTRA', 'TOYOTA COROLLA'],
+    'SEDAN PRIME': ['BMW 320i', 'BMW 530i', 'BMW 740i', 'MERCEDES E300', 'MERCEDES S500', 'MERCEDES C300'],
+    'SUV ESPECIAL': ['COROLLA CROSS', 'JEEP COMPASS', 'KIA SORENTO', 'VOLKSWAGEN TAOS'],
+    'SUV PRIME': ['JEEP COMMANDER', 'MITSUBISHI PAJERO', 'TOYOTA SW4', 'VOLKSWAGEN TIGUAN'],
+    'MINI VAN': ['MINI VAN'],
+    'VAN': ['VAN']
+  };
+
+  List<String> years = List.generate(7, (index) => (2018 + index).toString());
+
+  List<String> colors = ['Azul', 'Preto', 'Branco', 'Cinza', 'Vermelho'];
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(Duration.zero, () {
+      _showContractDialog(context);
+    });
+  }
+
+  void _showContractDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            "Leia o Contrato!",
+            style: TextStyle(color: Colors.red),
+          ),
+          content: Text(
+            "Por favor, leia e aceite o contrato antes de continuar com o registro. Existem regras no contrato que, em caso de não cumprimento, podem levar o motorista à suspensão ou banimento do app.",
+            style: TextStyle(color: Colors.black87),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text("OK", style: TextStyle(color: Colors.blue)),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -119,20 +166,35 @@ class _SignUpScreenState extends State<SignUpScreen> {
               );
             }),
           buildButton(
-              _currentPageIndex == 2 ? "Registrar" : "Próximo",
-                  () async {
-                if (_currentPageIndex == 0) await uploadPersonalInfo();
-                else if (_currentPageIndex == 1) await uploadCarInfo();
-                else if (_currentPageIndex == 2) await uploadDocuments();
-
-                if (_currentPageIndex < 2) {
-                  _pageController.nextPage(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.ease,
-                  );
+            _currentPageIndex == 2 ? "Registrar" : "Próximo",
+                () async {
+              if (_currentPageIndex == 0) {
+                if (!isPersonalInfoComplete()) {
+                  cMethods.displaySnackBar("Por favor, complete todas as informações pessoais.", context);
+                  return;
                 }
-              },
-              enabled: true // Sempre ativado conforme solicitado
+                await uploadPersonalInfo();
+              } else if (_currentPageIndex == 1) {
+                if (!isCarInfoComplete()) {
+                  cMethods.displaySnackBar("Por favor, complete todas as informações do carro.", context);
+                  return;
+                }
+                await uploadCarInfo();
+              } else if (_currentPageIndex == 2) {
+                if (!isDocumentsInfoComplete()) {
+                  cMethods.displaySnackBar("Por favor, faça o upload de todos os documentos.", context);
+                  return;
+                }
+                await uploadDocuments();
+              }
+
+              if (_currentPageIndex < 2) {
+                _pageController.nextPage(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.ease,
+                );
+              }
+            },
           ),
         ],
       ),
@@ -188,18 +250,41 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   bool isCarInfoComplete() {
-    int year = int.tryParse(vehicleYearTextEditingController.text) ?? 0;
-    return vehicleModelTextEditingController.text.trim().isNotEmpty &&
-        vehicleColorTextEditingController.text.trim().isNotEmpty &&
+    return selectedBrand != null &&
+        selectedYear != null &&
+        selectedColor != null &&
         vehicleNumberTextEditingController.text.trim().isNotEmpty &&
         selectedServiceType != null &&
-        year >= 2018 &&
         carImages.values.every((image) => image != null);
   }
 
   bool isDocumentsInfoComplete() {
-    return documentFiles.values.every((file) => file != null) &&
+    return documentFiles.values.any((file) => file != null) &&
         renavamTextEditingController.text.trim().isNotEmpty;
+  }
+
+  Future<String> uploadImage(File imageFile, String fileName) async {
+    try {
+      Reference reference = FirebaseStorage.instance.ref().child("Images").child(fileName);
+      UploadTask uploadTask = reference.putFile(imageFile);
+
+      // Listen to the task and handle errors
+      uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
+        // Handle upload progress
+      }, onError: (e) {
+        // Handle upload error
+        cMethods.displaySnackBar("Erro no upload da imagem: $e", context);
+      });
+
+      // Wait for the upload to complete
+      TaskSnapshot snapshot = await uploadTask;
+      String downloadURL = await snapshot.ref.getDownloadURL();
+
+      return downloadURL;
+    } catch (e) {
+      cMethods.displaySnackBar("Erro no upload da imagem: $e", context);
+      return "";
+    }
   }
 
   Future<void> uploadPersonalInfo() async {
@@ -211,15 +296,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
 
       String imageIDName = DateTime.now().millisecondsSinceEpoch.toString();
-      Reference referenceImage = FirebaseStorage.instance.ref().child("Images").child(imageIDName);
-
-      UploadTask uploadTask = referenceImage.putFile(File(imageFile!.path));
-      TaskSnapshot snapshot = await uploadTask;
-      urlOfUploadedImage = await snapshot.ref.getDownloadURL();
-
-      setState(() {
-        urlOfUploadedImage;
-      });
+      String imageURL = await uploadImage(File(imageFile!.path), imageIDName);
 
       final User? userFirebase = (await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailTextEditingController.text.trim(),
@@ -235,7 +312,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       DatabaseReference usersRef = FirebaseDatabase.instance.ref().child("drivers").child(userFirebase!.uid);
 
       Map<String, String> driverPersonalInfo = {
-        "photo": urlOfUploadedImage,
+        "photo": imageURL,
         "name": userNameTextEditingController.text.trim(),
         "email": emailTextEditingController.text.trim(),
         "phone": userPhoneTextEditingController.text.trim(),
@@ -250,6 +327,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
+  Future<void> uploadCarImages() async {
+    for (String key in carImages.keys) {
+      if (carImages[key] != null) {
+        String imageIDName = '$key' + '_' + '${DateTime.now().millisecondsSinceEpoch}';
+        String downloadURL = await uploadImage(File(carImages[key]!.path), imageIDName);
+        carImagesUrls[key] = downloadURL;
+      }
+    }
+  }
+
   Future<void> uploadCarInfo() async {
     try {
       showDialog(
@@ -258,26 +345,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
         builder: (BuildContext context) => LoadingDialog(messageText: "Fazendo upload..."),
       );
 
-      for (String key in carImages.keys) {
-        String imageIDName = '$key' + '_' + '${DateTime.now().millisecondsSinceEpoch}';
-        Reference referenceImage = FirebaseStorage.instance.ref().child("CarImages").child(imageIDName);
-
-        UploadTask uploadTask = referenceImage.putFile(File(carImages[key]!.path));
-        TaskSnapshot snapshot = await uploadTask;
-        carImagesUrls[key] = await snapshot.ref.getDownloadURL();
-
-        setState(() {
-          carImagesUrls[key];
-        });
-      }
+      await uploadCarImages();
 
       User? userFirebase = FirebaseAuth.instance.currentUser;
 
       DatabaseReference usersRef = FirebaseDatabase.instance.ref().child("drivers").child(userFirebase!.uid);
 
       Map<String, dynamic> driverCarInfo = {
-        "carColor": vehicleColorTextEditingController.text.trim(),
-        "carModel": vehicleModelTextEditingController.text.trim(),
+        "carColor": selectedColor,
+        "carModel": selectedBrand,
+        "carYear": selectedYear,
         "carNumber": vehicleNumberTextEditingController.text.trim(),
         "serviceType": selectedServiceType,
         "images": carImagesUrls,
@@ -300,16 +377,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
 
       for (String key in documentFiles.keys) {
-        String fileIDName = '$key' + '_' + '${DateTime.now().millisecondsSinceEpoch}';
-        Reference referenceFile = FirebaseStorage.instance.ref().child("DocumentFiles").child(fileIDName);
-
-        UploadTask uploadTask = referenceFile.putFile(documentFiles[key]!);
-        TaskSnapshot snapshot = await uploadTask;
-        documentFilesUrls[key] = await snapshot.ref.getDownloadURL();
-
-        setState(() {
-          documentFilesUrls[key];
-        });
+        if (documentFiles[key] != null) {
+          String fileIDName = '$key' + '_' + '${DateTime.now().millisecondsSinceEpoch}';
+          String downloadURL = await uploadImage(documentFiles[key]!, fileIDName);
+          documentFilesUrls[key] = downloadURL;
+        }
       }
 
       User? userFirebase = FirebaseAuth.instance.currentUser;
@@ -376,7 +448,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
-
   chooseImageFromGallery() async {
     final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
 
@@ -416,13 +487,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-
           const SizedBox(height: 15),
-
-          Text('Informações Pessoais', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black45)),
-
+          Text('Informações Pessoais', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black)),
           const SizedBox(height: 20),
-
           imageFile == null
               ? CircleAvatar(
             radius: 86,
@@ -448,7 +515,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Colors.black45,
+                color: Colors.blue,
               ),
             ),
           ),
@@ -463,7 +530,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 color: Colors.grey.shade700,
               ),
               enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.grey.shade700),
+                borderSide: BorderSide(color: Colors.blue),
               ),
               focusedBorder: const UnderlineInputBorder(
                 borderSide: BorderSide(color: Colors.blue),
@@ -473,6 +540,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               color: Colors.black,
               fontSize: 15,
             ),
+            onChanged: (value) => setState(() {}),
           ),
           const SizedBox(height: 22),
           TextField(
@@ -485,7 +553,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 color: Colors.grey.shade700,
               ),
               enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.grey.shade700),
+                borderSide: BorderSide(color: Colors.blue),
               ),
               focusedBorder: const UnderlineInputBorder(
                 borderSide: BorderSide(color: Colors.blue),
@@ -495,6 +563,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               color: Colors.black,
               fontSize: 15,
             ),
+            onChanged: (value) => setState(() {}),
           ),
           const SizedBox(height: 22),
           TextField(
@@ -507,7 +576,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 color: Colors.grey.shade700,
               ),
               enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.grey.shade700),
+                borderSide: BorderSide(color: Colors.blue),
               ),
               focusedBorder: const UnderlineInputBorder(
                 borderSide: BorderSide(color: Colors.blue),
@@ -517,6 +586,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               color: Colors.black,
               fontSize: 15,
             ),
+            onChanged: (value) => setState(() {}),
           ),
           const SizedBox(height: 22),
           TextField(
@@ -530,7 +600,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 color: Colors.grey.shade700,
               ),
               enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.grey.shade700),
+                borderSide: BorderSide(color: Colors.blue),
               ),
               focusedBorder: const UnderlineInputBorder(
                 borderSide: BorderSide(color: Colors.blue),
@@ -540,6 +610,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               color: Colors.black,
               fontSize: 15,
             ),
+            onChanged: (value) => setState(() {}),
           ),
         ],
       ),
@@ -554,7 +625,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 50),
-            Text('Informações do Veículo', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black45)),
+            Text('Informações do Veículo', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black)),
             const SizedBox(height: 22),
             const Text(
               'Complete os campos abaixo com as informações do veículo de trabalho.',
@@ -564,31 +635,68 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
             ),
             const SizedBox(height: 22),
-            TextField(
-              controller: vehicleModelTextEditingController,
-              keyboardType: TextInputType.text,
+            DropdownButtonFormField<String>(
               decoration: InputDecoration(
-                labelText: "Modelo do Veículo (Marca e Linha)",
+                labelText: "Categoria de Serviço",
                 labelStyle: TextStyle(
                   fontSize: 14,
                   color: Colors.grey.shade700,
                 ),
                 enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey.shade700),
+                  borderSide: BorderSide(color: Colors.blue),
                 ),
                 focusedBorder: const UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.blue),
                 ),
               ),
-              style: const TextStyle(
-                color: Colors.black,
-                fontSize: 15,
-              ),
+              items: serviceCategories.keys.map((String category) {
+                return DropdownMenuItem<String>(
+                  value: category,
+                  child: Text(category),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                setState(() {
+                  selectedServiceType = newValue;
+                  selectedBrand = null;
+                });
+              },
+              value: selectedServiceType,
+              dropdownColor: Colors.grey.shade300,
             ),
             const SizedBox(height: 22),
-            TextField(
-              controller: vehicleYearTextEditingController,
-              keyboardType: TextInputType.number,
+            DropdownButtonFormField<String>(
+              decoration: InputDecoration(
+                labelText: "Marca e Modelo",
+                labelStyle: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade700,
+                ),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue),
+                ),
+                focusedBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue),
+                ),
+              ),
+              items: selectedServiceType != null
+                  ? serviceCategories[selectedServiceType]!.map((String brand) {
+                return DropdownMenuItem<String>(
+                  value: brand,
+                  child: Text(brand),
+                );
+              }).toList()
+                  : [],
+              onChanged: (String? newValue) {
+                setState(() {
+                  selectedBrand = newValue;
+                });
+              },
+              value: selectedBrand,
+              dropdownColor: Colors.grey.shade300,
+            ),
+            const SizedBox(height: 22),
+            DropdownButtonFormField<String>(
               decoration: InputDecoration(
                 labelText: "Ano do Veículo",
                 labelStyle: TextStyle(
@@ -596,21 +704,28 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   color: Colors.grey.shade700,
                 ),
                 enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey.shade700),
+                  borderSide: BorderSide(color: Colors.blue),
                 ),
                 focusedBorder: const UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.blue),
                 ),
               ),
-              style: const TextStyle(
-                color: Colors.black,
-                fontSize: 15,
-              ),
+              items: years.map((String year) {
+                return DropdownMenuItem<String>(
+                  value: year,
+                  child: Text(year),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                setState(() {
+                  selectedYear = newValue;
+                });
+              },
+              value: selectedYear,
+              dropdownColor: Colors.grey.shade300,
             ),
             const SizedBox(height: 22),
-            TextField(
-              controller: vehicleColorTextEditingController,
-              keyboardType: TextInputType.text,
+            DropdownButtonFormField<String>(
               decoration: InputDecoration(
                 labelText: "Cor do Veículo",
                 labelStyle: TextStyle(
@@ -618,16 +733,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   color: Colors.grey.shade700,
                 ),
                 enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey.shade700),
+                  borderSide: BorderSide(color: Colors.blue),
                 ),
                 focusedBorder: const UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.blue),
                 ),
               ),
-              style: const TextStyle(
-                color: Colors.black,
-                fontSize: 15,
-              ),
+              items: colors.map((String color) {
+                return DropdownMenuItem<String>(
+                  value: color,
+                  child: Text(color),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                setState(() {
+                  selectedColor = newValue;
+                });
+              },
+              value: selectedColor,
+              dropdownColor: Colors.grey.shade300,
             ),
             const SizedBox(height: 22),
             TextField(
@@ -640,52 +764,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   color: Colors.grey.shade700,
                 ),
                 enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey.shade700),
+                  borderSide: BorderSide(color: Colors.blue),
                 ),
                 focusedBorder: const UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.blue),
                 ),
+                errorText: isPlateValid(vehicleNumberTextEditingController.text) ? null : "Placa inválida",
               ),
               style: const TextStyle(
                 color: Colors.black,
                 fontSize: 15,
               ),
-            ),
-            const SizedBox(height: 22),
-            DropdownButtonFormField<String>(
-              decoration: InputDecoration(
-                labelText: "Categoria de Serviço",
-                labelStyle: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade700,
-                ),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey.shade700),
-                ),
-                focusedBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue),
-                ),
-              ),
-              items: <String>['Sedan Executivo', 'Sedan Prime', 'SUV Especial', 'SUV Prime', 'Mini Van', 'Van']
-                  .map((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              onChanged: (newValue) {
-                setState(() {
-                  selectedServiceType = newValue;
-                });
-              },
-              value: selectedServiceType,
+              onChanged: (value) => setState(() {}),
             ),
             const SizedBox(height: 22),
             const Text(
               'Insira as seguintes fotos do veículo:',
               style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey
+                  fontSize: 13,
+                  color: Colors.grey
               ),
             ),
             const SizedBox(height: 10),
@@ -709,7 +806,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 50),
-            Text('Upload de Documentos', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black45)),
+            Text('Upload de Documentos', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black)),
             const SizedBox(height: 15),
             const Text(
               'Realize o upload dos arquivos exigidos abaixo. Todos os documentos abaixo do motorista e veículo são necessários para o cadastro.',
@@ -725,7 +822,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             buildDocumentFilePicker('cnh', 'CNH (Incluindo EAR)'),
             buildDocumentFilePicker('rg', 'RG'),
             buildDocumentFilePicker('toxicologico', 'Toxicológico (Últimos 12 meses)'),
-            buildDocumentFilePicker('renavam', 'Documento RENAVAM'),
+            buildDocumentFilePicker('renavam', 'Documento CRLV'),
           ],
         ),
       ),
@@ -848,5 +945,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
         ),
       ],
     );
+  }
+
+  bool isPlateValid(String plate) {
+    final mercosulRegex = RegExp(r'^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$');
+    return mercosulRegex.hasMatch(plate);
   }
 }
