@@ -10,60 +10,57 @@ class TripsPage extends StatefulWidget {
   State<TripsPage> createState() => _TripsPageState();
 }
 
-class _TripsPageState extends State<TripsPage>
-{
-  String currentDriverTotalTripsCompleted = "";
+class _TripsPageState extends State<TripsPage> {
+  String currentDriverTotalTripsCompleted = "0";
 
-  getCurrentDriverTotalNumberOfTripsCompleted() async
-  {
-    DatabaseReference tripRequestsRef = FirebaseDatabase.instance.ref().child("tripRequests");
+  @override
+  void initState() {
+    super.initState();
+    getCurrentDriverTotalNumberOfTripsCompleted();
+  }
 
-    await tripRequestsRef.once().then((snap)async
-    {
-      if(snap.snapshot.value != null)
-      {
+  getCurrentDriverTotalNumberOfTripsCompleted() async {
+    try {
+      DatabaseReference tripRequestsRef = FirebaseDatabase.instance.ref().child("tripRequests");
+
+      final snap = await tripRequestsRef.once();
+
+      if (snap.snapshot.value != null) {
         Map<dynamic, dynamic> allTripsMap = snap.snapshot.value as Map;
-        int allTripsLength = allTripsMap.length;
-
         List<String> tripsCompletedByCurrentDriver = [];
 
-        allTripsMap.forEach((key, value)
-        {
-          if(value["status"] != null)
-          {
-            if(value["status"] == "ended")
-            {
-              if(value["driverID"] == FirebaseAuth.instance.currentUser!.uid)
-              {
-                tripsCompletedByCurrentDriver.add(key);
-              }
-            }
+        allTripsMap.forEach((key, value) {
+          if (value["status"] != null && value["status"] == "ended" && value["driverID"] == FirebaseAuth.instance.currentUser!.uid) {
+            tripsCompletedByCurrentDriver.add(key);
           }
         });
 
         setState(() {
           currentDriverTotalTripsCompleted = tripsCompletedByCurrentDriver.length.toString();
         });
+      } else {
+        setState(() {
+          currentDriverTotalTripsCompleted = "0";
+        });
       }
-    });
-  }
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-
-    getCurrentDriverTotalNumberOfTripsCompleted();
+    } catch (e) {
+      print("Error fetching trip data: $e");
+      setState(() {
+        currentDriverTotalTripsCompleted = "0";
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text("Informações do Motorista"),
+      ),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-
-          //Total Trips
+          // Total Trips
           Center(
             child: Container(
               color: Colors.indigo,
@@ -72,20 +69,14 @@ class _TripsPageState extends State<TripsPage>
                 padding: const EdgeInsets.all(18.0),
                 child: Column(
                   children: [
-
-                    Image.asset("assets/images/totaltrips.png", width: 120,),
-
-                    const SizedBox(
-                      height: 10,
-                    ),
-
+                    Image.asset("assets/images/totaltrips.png", width: 120),
+                    const SizedBox(height: 10),
                     const Text(
-                      "Total Trips:",
+                      "Total de Viagens:",
                       style: TextStyle(
                         color: Colors.white,
                       ),
                     ),
-
                     Text(
                       currentDriverTotalTripsCompleted,
                       style: const TextStyle(
@@ -94,22 +85,19 @@ class _TripsPageState extends State<TripsPage>
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-
                   ],
                 ),
               ),
             ),
           ),
-
-          const SizedBox(
-            height: 20,
-          ),
-
-          //check trip history
+          const SizedBox(height: 20),
+          // Check trip history
           GestureDetector(
-            onTap: ()
-            {
-              Navigator.push(context, MaterialPageRoute(builder: (c)=> TripsHistoryPage()));
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (c) => const TripsHistoryPage()),
+              );
             },
             child: Center(
               child: Container(
@@ -119,27 +107,20 @@ class _TripsPageState extends State<TripsPage>
                   padding: const EdgeInsets.all(18.0),
                   child: Column(
                     children: [
-
-                      Image.asset("assets/images/tripscompleted.png", width: 150,),
-
-                      const SizedBox(
-                        height: 10,
-                      ),
-
+                      Image.asset("assets/images/tripscompleted.png", width: 150),
+                      const SizedBox(height: 10),
                       const Text(
-                        "Check Trips History",
+                        "Verifique Histórico de Viagens",
                         style: TextStyle(
                           color: Colors.white,
                         ),
                       ),
-
                     ],
                   ),
                 ),
               ),
             ),
           ),
-
         ],
       ),
     );

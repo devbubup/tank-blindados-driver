@@ -57,7 +57,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
-                "O valor de ( \$ ${widget.fareAmount} ) será cobrado do usuário.",
+                "O valor de \$ ${widget.fareAmount} será cobrado do usuário.",
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: Colors.grey),
               ),

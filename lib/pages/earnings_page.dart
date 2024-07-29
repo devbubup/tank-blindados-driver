@@ -9,22 +9,18 @@ class EarningsPage extends StatefulWidget {
   State<EarningsPage> createState() => _EarningsPageState();
 }
 
-class _EarningsPageState extends State<EarningsPage>
-{
+class _EarningsPageState extends State<EarningsPage> {
   String driverEarnings = "";
 
-  getTotalEarningsOfCurrentDriver() async
-  {
+  getTotalEarningsOfCurrentDriver() async {
     DatabaseReference driversRef = FirebaseDatabase.instance.ref().child("drivers");
 
     await driversRef.child(FirebaseAuth.instance.currentUser!.uid)
         .once()
-        .then((snap)
-    {
-      if((snap.snapshot.value as Map)["earnings"] != null)
-      {
+        .then((snap) {
+      if ((snap.snapshot.value as Map)["earnings"] != null) {
         setState(() {
-          driverEarnings = ((snap.snapshot.value as Map)["earnings"]).toString();
+          driverEarnings = ((snap.snapshot.value as Map)["earnings"]).toStringAsFixed(2);
         });
       }
     });
@@ -32,9 +28,7 @@ class _EarningsPageState extends State<EarningsPage>
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-
     getTotalEarningsOfCurrentDriver();
   }
 
@@ -44,7 +38,6 @@ class _EarningsPageState extends State<EarningsPage>
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-
           Center(
             child: Container(
               color: Colors.indigo,
@@ -53,15 +46,12 @@ class _EarningsPageState extends State<EarningsPage>
                 padding: const EdgeInsets.all(18.0),
                 child: Column(
                   children: [
+                    Image.asset("assets/images/totalearnings.png", width: 120),
 
-                    Image.asset("assets/images/totalearnings.png", width: 120,),
-
-                    const SizedBox(
-                      height: 10,
-                    ),
+                    const SizedBox(height: 10),
 
                     const Text(
-                      "Total Earnings:",
+                      "Ganhos Totais no Mês:",
                       style: TextStyle(
                         color: Colors.white,
                       ),
@@ -75,13 +65,11 @@ class _EarningsPageState extends State<EarningsPage>
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-
                   ],
                 ),
               ),
             ),
           ),
-
         ],
       ),
     );

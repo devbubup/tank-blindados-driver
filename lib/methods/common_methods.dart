@@ -99,7 +99,7 @@ class CommonMethods
   {
     double distancePerKmAmount = 0.4;
     double durationPerMinuteAmount = 0.3;
-    double baseFareAmount = 2;
+    double baseFareAmount = 20;
 
     double totalDistanceTravelFareAmount = (directionDetails.distanceValueDigits! / 1000) * distancePerKmAmount;
     double totalDurationSpendFareAmount = (directionDetails.durationValueDigits! / 60) * durationPerMinuteAmount;

@@ -34,13 +34,13 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.white,
       body: Center(
         child: SingleChildScrollView(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              //image
+              // Image
               Container(
                 width: 180,
                 height: 180,
@@ -51,94 +51,35 @@ class _ProfilePageState extends State<ProfilePage> {
                     fit: BoxFit.cover,
                     image: NetworkImage(driverPhoto),
                   ),
+                  border: Border.all(
+                    color: Colors.black,
+                    width: 2,
+                  ),
                 ),
               ),
-
               const SizedBox(height: 16),
-
-              //driver name
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 8),
-                child: TextField(
-                  controller: nameTextEditingController,
-                  textAlign: TextAlign.center,
-                  enabled: false,
-                  style: const TextStyle(fontSize: 16, color: Colors.white),
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.black54,
-                    border: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.white, width: 2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    prefixIcon: const Icon(Icons.person, color: Colors.white),
-                  ),
-                ),
+              // Driver name
+              buildTextField(
+                controller: nameTextEditingController,
+                icon: Icons.person,
               ),
-
-              //driver phone
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 4),
-                child: TextField(
-                  controller: phoneTextEditingController,
-                  textAlign: TextAlign.center,
-                  enabled: false,
-                  style: const TextStyle(fontSize: 16, color: Colors.white),
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.black54,
-                    border: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.white, width: 2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    prefixIcon: const Icon(Icons.phone_android_outlined, color: Colors.white),
-                  ),
-                ),
+              // Driver phone
+              buildTextField(
+                controller: phoneTextEditingController,
+                icon: Icons.phone_android_outlined,
               ),
-
-              //driver email
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 4),
-                child: TextField(
-                  controller: emailTextEditingController,
-                  textAlign: TextAlign.center,
-                  enabled: false,
-                  style: const TextStyle(fontSize: 16, color: Colors.white),
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.black54,
-                    border: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.white, width: 2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    prefixIcon: const Icon(Icons.email, color: Colors.white),
-                  ),
-                ),
+              // Driver email
+              buildTextField(
+                controller: emailTextEditingController,
+                icon: Icons.email,
               ),
-
-              //driver car info
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 4),
-                child: TextField(
-                  controller: carTextEditingController,
-                  textAlign: TextAlign.center,
-                  enabled: false,
-                  style: const TextStyle(fontSize: 16, color: Colors.white),
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.black54,
-                    border: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.white, width: 2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    prefixIcon: const Icon(Icons.drive_eta_rounded, color: Colors.white),
-                  ),
-                ),
+              // Driver car info
+              buildTextField(
+                controller: carTextEditingController,
+                icon: Icons.drive_eta_rounded,
               ),
-
               const SizedBox(height: 12),
-
-              //logout btn
+              // Logout button
               ElevatedButton(
                 onPressed: () {
                   FirebaseAuth.instance.signOut();
@@ -148,7 +89,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   backgroundColor: Colors.blue.shade900,
                   padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 18),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(4), // Menos arredondado
                   ),
                 ),
                 child: const Text(
@@ -158,6 +99,27 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget buildTextField({required TextEditingController controller, required IconData icon}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 8),
+      child: TextField(
+        controller: controller,
+        textAlign: TextAlign.center,
+        enabled: false,
+        style: const TextStyle(fontSize: 16, color: Colors.black),
+        decoration: InputDecoration(
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.black, width: 2),
+            borderRadius: BorderRadius.circular(4), // Menos arredondado
+          ),
+          prefixIcon: Icon(icon, color: Colors.black),
         ),
       ),
     );

@@ -2,46 +2,39 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 
-
-class TripsHistoryPage extends StatefulWidget
-{
+class TripsHistoryPage extends StatefulWidget {
   const TripsHistoryPage({super.key});
 
   @override
   State<TripsHistoryPage> createState() => _TripsHistoryPageState();
 }
 
-
-
-class _TripsHistoryPageState extends State<TripsHistoryPage>
-{
+class _TripsHistoryPageState extends State<TripsHistoryPage> {
   final completedTripRequestsOfCurrentDriver = FirebaseDatabase.instance.ref().child("tripRequests");
 
   @override
-  Widget build(BuildContext context)
-  {
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'My Completed Trips',
+          'Histórico de Corridas',
           style: TextStyle(
             color: Colors.white,
           ),
         ),
+        backgroundColor: Colors.black,
         leading: IconButton(
-          onPressed: ()
-          {
+          onPressed: () {
             Navigator.pop(context);
           },
-          icon: const Icon(Icons.arrow_back, color: Colors.white,),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
         ),
       ),
+      backgroundColor: Colors.black, // Fundo preto
       body: StreamBuilder(
         stream: completedTripRequestsOfCurrentDriver.onValue,
-        builder: (BuildContext context, snapshotData)
-        {
-          if(snapshotData.hasError)
-          {
+        builder: (BuildContext context, snapshotData) {
+          if (snapshotData.hasError) {
             return const Center(
               child: Text(
                 "Error Occurred.",
@@ -50,8 +43,7 @@ class _TripsHistoryPageState extends State<TripsHistoryPage>
             );
           }
 
-          if(!(snapshotData.hasData))
-          {
+          if (!snapshotData.hasData) {
             return const Center(
               child: Text(
                 "No record found.",
@@ -67,28 +59,27 @@ class _TripsHistoryPageState extends State<TripsHistoryPage>
           return ListView.builder(
             shrinkWrap: true,
             itemCount: tripsList.length,
-            itemBuilder: ((context, index)
-            {
-              if(tripsList[index]["status"] != null
-                  && tripsList[index]["status"] == "ended"
-                  && tripsList[index]["driverID"] == FirebaseAuth.instance.currentUser!.uid)
-              {
+            itemBuilder: ((context, index) {
+              if (tripsList[index]["status"] != null &&
+                  tripsList[index]["status"] == "ended" &&
+                  tripsList[index]["driverID"] == FirebaseAuth.instance.currentUser!.uid) {
                 return Card(
-                  color: Colors.white12,
-                  elevation: 10,
+                  color: Colors.white, // Card branco
+                  elevation: 5,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4), // Menos arredondado
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-
-                        //pickup - fare amount
+                        // pickup - fare amount
                         Row(
                           children: [
+                            Image.asset('assets/images/initial.png', height: 16, width: 16),
 
-                            Image.asset('assets/images/initial.png', height: 16, width: 16,),
-
-                            const SizedBox(width: 18,),
+                            const SizedBox(width: 18),
 
                             Expanded(
                               child: Text(
@@ -96,33 +87,31 @@ class _TripsHistoryPageState extends State<TripsHistoryPage>
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   fontSize: 18,
-                                  color: Colors.white38,
+                                  color: Colors.black,
                                 ),
                               ),
                             ),
 
-                            const SizedBox(width: 5,),
+                            const SizedBox(width: 5),
 
                             Text(
                               "\$ " + tripsList[index]["fareAmount"].toString(),
                               style: const TextStyle(
                                 fontSize: 16,
-                                color: Colors.white,
+                                color: Colors.blue,
                               ),
                             ),
-
                           ],
                         ),
 
-                        const SizedBox(height: 8,),
+                        const SizedBox(height: 8),
 
-                        //dropoff
+                        // dropoff
                         Row(
                           children: [
+                            Image.asset('assets/images/final.png', height: 16, width: 16),
 
-                            Image.asset('assets/images/final.png', height: 16, width: 16,),
-
-                            const SizedBox(width: 18,),
+                            const SizedBox(width: 18),
 
                             Expanded(
                               child: Text(
@@ -130,21 +119,17 @@ class _TripsHistoryPageState extends State<TripsHistoryPage>
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   fontSize: 18,
-                                  color: Colors.white38,
+                                  color: Colors.black,
                                 ),
                               ),
                             ),
-
                           ],
                         ),
-
                       ],
                     ),
                   ),
                 );
-              }
-              else
-              {
+              } else {
                 return Container();
               }
             }),
