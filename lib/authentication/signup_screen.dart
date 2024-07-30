@@ -35,7 +35,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
     'lateral_direita': null,
     'lateral_esquerda': null,
     'chassi': null,
-    'pneus': null,
+    'pneu_dianteiro_direito': null,
+    'pneu_dianteiro_esquerdo': null,
+    'pneu_traseiro_direito': null,
+    'pneu_traseiro_esquerdo': null,
   };
 
   Map<String, String> carImagesUrls = {
@@ -44,7 +47,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
     'lateral_direita': '',
     'lateral_esquerda': '',
     'chassi': '',
-    'pneus': '',
+    'pneu_dianteiro_direito': '',
+    'pneu_dianteiro_esquerdo': '',
+    'pneu_traseiro_direito': '',
+    'pneu_traseiro_esquerdo': '',
   };
 
   Map<String, File?> documentFiles = {
@@ -69,18 +75,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   String? selectedServiceType;
   String? selectedBrand;
+  String? selectedModel;
   String? selectedYear;
   String? selectedColor;
   int _currentPageIndex = 0;
   PageController _pageController = PageController();
 
   Map<String, List<String>> serviceCategories = {
-    'SEDAN EXECUTIVO': ['CHEVROLET CRUZE', 'NISSAN SENTRA', 'TOYOTA COROLLA'],
-    'SEDAN PRIME': ['BMW 320i', 'BMW 530i', 'BMW 740i', 'MERCEDES E300', 'MERCEDES S500', 'MERCEDES C300'],
-    'SUV ESPECIAL': ['COROLLA CROSS', 'JEEP COMPASS', 'KIA SORENTO', 'VOLKSWAGEN TAOS'],
-    'SUV PRIME': ['JEEP COMMANDER', 'MITSUBISHI PAJERO', 'TOYOTA SW4', 'VOLKSWAGEN TIGUAN'],
-    'MINI VAN': ['MINI VAN'],
-    'VAN': ['VAN']
+    'Sedan Exec.': ['CHEVROLET CRUZE', 'NISSAN SENTRA', 'TOYOTA COROLLA'],
+    'Sedan Prime': ['BMW 320i', 'BMW 530i', 'BMW 740i', 'MERCEDES E300', 'MERCEDES S500', 'MERCEDES C300'],
+    'SUV Especial': ['COROLLA CROSS', 'JEEP COMPASS', 'KIA SORENTO', 'VOLKSWAGEN TAOS'],
+    'SUV Prime': ['JEEP COMMANDER', 'MITSUBISHI PAJERO', 'TOYOTA SW4', 'VOLKSWAGEN TIGUAN'],
+    'Mini Van': ['MINI VAN'],
+    'Van': ['VAN']
   };
 
   List<String> years = List.generate(7, (index) => (2018 + index).toString());
@@ -181,10 +188,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 }
                 await uploadCarInfo();
               } else if (_currentPageIndex == 2) {
-                if (!isDocumentsInfoComplete()) {
-                  cMethods.displaySnackBar("Por favor, faça o upload de todos os documentos.", context);
-                  return;
-                }
                 await uploadDocuments();
               }
 
@@ -251,16 +254,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   bool isCarInfoComplete() {
     return selectedBrand != null &&
+        selectedModel != null &&
         selectedYear != null &&
         selectedColor != null &&
         vehicleNumberTextEditingController.text.trim().isNotEmpty &&
         selectedServiceType != null &&
-        carImages.values.every((image) => image != null);
-  }
-
-  bool isDocumentsInfoComplete() {
-    return documentFiles.values.any((file) => file != null) &&
-        renavamTextEditingController.text.trim().isNotEmpty;
+        carImages.values.any((image) => image != null);
   }
 
   Future<String> uploadImage(File imageFile, String fileName) async {
@@ -353,7 +352,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       Map<String, dynamic> driverCarInfo = {
         "carColor": selectedColor,
-        "carModel": selectedBrand,
+        "carBrand": selectedBrand,
+        "carModel": selectedModel,
         "carYear": selectedYear,
         "carNumber": vehicleNumberTextEditingController.text.trim(),
         "serviceType": selectedServiceType,
@@ -440,8 +440,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
           );
         },
       );
-
-
     } catch (e) {
       Navigator.pop(context);
       cMethods.displaySnackBar("Erro no upload dos documentos: $e", context);
@@ -659,6 +657,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 setState(() {
                   selectedServiceType = newValue;
                   selectedBrand = null;
+                  selectedModel = null;
                 });
               },
               value: selectedServiceType,
@@ -667,7 +666,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             const SizedBox(height: 22),
             DropdownButtonFormField<String>(
               decoration: InputDecoration(
-                labelText: "Marca e Modelo",
+                labelText: "Marca",
                 labelStyle: TextStyle(
                   fontSize: 14,
                   color: Colors.grey.shade700,
@@ -680,7 +679,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
               ),
               items: selectedServiceType != null
-                  ? serviceCategories[selectedServiceType]!.map((String brand) {
+                  ? serviceCategories[selectedServiceType]!
+                  .map((String brandModel) => brandModel.split(' ')[0])
+                  .toSet()
+                  .map((String brand) {
                 return DropdownMenuItem<String>(
                   value: brand,
                   child: Text(brand),
@@ -690,9 +692,44 @@ class _SignUpScreenState extends State<SignUpScreen> {
               onChanged: (String? newValue) {
                 setState(() {
                   selectedBrand = newValue;
+                  selectedModel = null;
                 });
               },
               value: selectedBrand,
+              dropdownColor: Colors.grey.shade300,
+            ),
+            const SizedBox(height: 22),
+            DropdownButtonFormField<String>(
+              decoration: InputDecoration(
+                labelText: "Modelo",
+                labelStyle: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade700,
+                ),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue),
+                ),
+                focusedBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue),
+                ),
+              ),
+              items: selectedBrand != null
+                  ? serviceCategories[selectedServiceType]!
+                  .where((String brandModel) => brandModel.startsWith(selectedBrand!))
+                  .map((String brandModel) => brandModel.split(' ').sublist(1).join(' '))
+                  .map((String model) {
+                return DropdownMenuItem<String>(
+                  value: model,
+                  child: Text(model),
+                );
+              }).toList()
+                  : [],
+              onChanged: (String? newValue) {
+                setState(() {
+                  selectedModel = newValue;
+                });
+              },
+              value: selectedModel,
               dropdownColor: Colors.grey.shade300,
             ),
             const SizedBox(height: 22),
@@ -790,8 +827,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
             buildCarImagePicker('traseira', 'Foto da Traseira'),
             buildCarImagePicker('lateral_direita', 'Foto Lateral Direita'),
             buildCarImagePicker('lateral_esquerda', 'Foto Lateral Esquerda'),
-            buildCarImagePicker('chassi', 'Foto do Chassi'),
-            buildCarImagePicker('pneus', 'Foto dos Pneus'),
+            buildCarImagePicker('chassi', 'Foto do Número do Chassi'),
+            buildCarImagePicker('pneu_dianteiro_direito', 'Foto do Pneu Dianteiro Direito'),
+            buildCarImagePicker('pneu_dianteiro_esquerdo', 'Foto do Pneu Dianteiro Esquerdo'),
+            buildCarImagePicker('pneu_traseiro_direito', 'Foto do Pneu Traseiro Direito'),
+            buildCarImagePicker('pneu_traseiro_esquerdo', 'Foto do Pneu Traseiro Esquerdo'),
           ],
         ),
       ),
