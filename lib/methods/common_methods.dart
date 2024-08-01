@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:drivers_app/global/global_var.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_geofire/flutter_geofire.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -95,17 +96,58 @@ class CommonMethods
     return detailsModel;
   }
 
-  calculateFareAmount(DirectionDetails directionDetails)
-  {
-    double distancePerKmAmount = 0.4;
-    double durationPerMinuteAmount = 0.3;
-    double baseFareAmount = 20;
+  Future<double> calculateFareAmount(DirectionDetails directionDetails) async {
+    // Fetch the driver's service type from the database
+    String driverID = FirebaseAuth.instance.currentUser!.uid;
+    DatabaseReference driverRef = FirebaseDatabase.instance.ref().child("drivers").child(driverID).child("car_details");
+    DataSnapshot snapshot = await driverRef.child("serviceType").get();
 
-    double totalDistanceTravelFareAmount = (directionDetails.distanceValueDigits! / 1000) * distancePerKmAmount;
-    double totalDurationSpendFareAmount = (directionDetails.durationValueDigits! / 60) * durationPerMinuteAmount;
+    if (snapshot.exists) {
+      String serviceType = snapshot.value.toString();
 
-    double overAllTotalFareAmount = baseFareAmount + totalDistanceTravelFareAmount + totalDurationSpendFareAmount;
+      double distancePerKmAmount;
+      double baseFareAmount;
 
-    return overAllTotalFareAmount.toStringAsFixed(1);
+      // Set the fare amounts based on the service type
+      switch (serviceType) {
+        case "Sedan Exec.":
+          distancePerKmAmount = 10;
+          baseFareAmount = 25;
+          break;
+        case "Sedan Prime":
+          distancePerKmAmount = 12;
+          baseFareAmount = 30;
+          break;
+        case "SUV Especial":
+          distancePerKmAmount = 15;
+          baseFareAmount = 35;
+          break;
+        case "SUV Prime":
+          distancePerKmAmount = 17;
+          baseFareAmount = 40;
+          break;
+        case "Mini Van":
+          distancePerKmAmount = 17;
+          baseFareAmount = 45;
+          break;
+        case "Van":
+          distancePerKmAmount = 18;
+          baseFareAmount = 50;
+          break;
+        default:
+        // Default values if the service type is not recognized
+          distancePerKmAmount = 15;
+          baseFareAmount = 20;
+      }
+
+      double totalDistanceTravelFareAmount = (directionDetails.distanceValueDigits! / 1000) * distancePerKmAmount;
+
+      double overAllTotalFareAmount = baseFareAmount + totalDistanceTravelFareAmount;
+
+      return double.parse(overAllTotalFareAmount.toStringAsFixed(2));
+    } else {
+      throw Exception("Service type not found for driver");
+    }
   }
+
 }

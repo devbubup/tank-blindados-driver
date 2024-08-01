@@ -1,6 +1,5 @@
 import 'package:drivers_app/methods/common_methods.dart';
 import 'package:flutter/material.dart';
-//import 'package:restart_app/restart_app.dart';
 
 class PaymentDialog extends StatefulWidget {
   final String fareAmount;
@@ -33,7 +32,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
           children: [
             const SizedBox(height: 21,),
             const Text(
-              "Pegar Dinheiro",
+              "Sair",
               style: TextStyle(
                 color: Colors.grey,
               ),
@@ -46,7 +45,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
             ),
             const SizedBox(height: 16,),
             Text(
-              "\$" + widget.fareAmount,
+              "R\$ ${widget.fareAmount}",
               style: const TextStyle(
                 color: Colors.grey,
                 fontSize: 36,
@@ -57,7 +56,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
-                "O valor de \$ ${widget.fareAmount} será cobrado do usuário.",
+                "A corrida foi finalizada. O valor de R\$ ${widget.fareAmount} será cobrado do usuário. Agora está disponível para novas corridas.",
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: Colors.grey),
               ),
@@ -69,14 +68,12 @@ class _PaymentDialogState extends State<PaymentDialog> {
                 Navigator.pop(context);
 
                 cMethods.turnOnLocationUpdatesForHomePage();
-
-                //Restart.restartApp();  // Verifique se 'Restart' está definido
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
               ),
               child: const Text(
-                "Pegar Dinheiro",
+                "Sair",
               ),
             ),
             const SizedBox(height: 41,)

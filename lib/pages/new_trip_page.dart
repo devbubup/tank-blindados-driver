@@ -46,6 +46,8 @@ class _NewTripPageState extends State<NewTripPage>
   String buttonTitleText = "CHEGOU";
   Color buttonColor = Colors.indigoAccent;
   CommonMethods cMethods = CommonMethods();
+  double? initialFareAmount;
+
 
   makeMarker()
   {
@@ -265,8 +267,8 @@ class _NewTripPageState extends State<NewTripPage>
     }
   }
 
-  endTripNow() async
-  {
+
+  void endTripNow() async {
     showDialog(
       barrierDismissible: false,
       context: context,
@@ -275,18 +277,18 @@ class _NewTripPageState extends State<NewTripPage>
 
     var driverCurrentLocationLatLng = LatLng(driverCurrentPosition!.latitude, driverCurrentPosition!.longitude);
 
-    var directionDetailsEndTripInfo = await CommonMethods.getDirectionDetailsFromAPI(
-      widget.newTripDetailsInfo!.pickUpLatLng!, //pickup
-      driverCurrentLocationLatLng, //destination
+    var directionDetailsStartTripInfo = await CommonMethods.getDirectionDetailsFromAPI(
+      driverCurrentLocationLatLng, //pickup
+      widget.newTripDetailsInfo!.dropOffLatLng!, //destination
     );
 
-    Navigator.pop(context);
-
-    String fareAmount = (cMethods.calculateFareAmount(directionDetailsEndTripInfo!)).toString();
+    if (directionDetailsStartTripInfo != null) {
+      initialFareAmount = await cMethods.calculateFareAmount(directionDetailsStartTripInfo);
+    }
 
     await FirebaseDatabase.instance.ref().child("tripRequests")
         .child(widget.newTripDetailsInfo!.tripID!)
-        .child("fareAmount").set(fareAmount);
+        .child("fareAmount").set(initialFareAmount.toString());
 
     await FirebaseDatabase.instance.ref().child("tripRequests")
         .child(widget.newTripDetailsInfo!.tripID!)
@@ -294,46 +296,43 @@ class _NewTripPageState extends State<NewTripPage>
 
     positionStreamNewTripPage!.cancel();
 
+    Navigator.pop(context);
+
     //dialog for collecting fare amount
-    displayPaymentDialog(fareAmount);
+    displayPaymentDialog(initialFareAmount!);
 
     //save fare amount to driver total earnings
-    saveFareAmountToDriverTotalEarnings(fareAmount);
+    saveFareAmountToDriverTotalEarnings(initialFareAmount!);
   }
 
-  displayPaymentDialog(fareAmount)
-  {
+  void displayPaymentDialog(double fareAmount) {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) => PaymentDialog(fareAmount: fareAmount),
+      builder: (BuildContext context) => PaymentDialog(fareAmount: fareAmount.toStringAsFixed(2)),
     );
   }
 
-  saveFareAmountToDriverTotalEarnings(String fareAmount) async
-  {
+
+  void saveFareAmountToDriverTotalEarnings(double fareAmount) async {
     DatabaseReference driverEarningsRef = FirebaseDatabase.instance.ref()
         .child("drivers")
         .child(FirebaseAuth.instance.currentUser!.uid)
         .child("earnings");
 
-    await driverEarningsRef.once().then((snap)
-    {
-      if(snap.snapshot.value != null)
-      {
-        double previousTotalEarnings = double.parse(snap.snapshot.value.toString());
-        double fareAmountForTrip = double.parse(fareAmount);
-
-        double newTotalEarnings = previousTotalEarnings + fareAmountForTrip;
-
+    await driverEarningsRef.once().then((snap) {
+      if (snap.snapshot.value != null) {
+        double previousTotalEarnings = double.tryParse(snap.snapshot.value.toString()) ?? 0.0;
+        double newTotalEarnings = previousTotalEarnings + fareAmount;
         driverEarningsRef.set(newTotalEarnings);
-      }
-      else
-      {
+      } else {
         driverEarningsRef.set(fareAmount);
       }
+    }).catchError((error) {
+      print("Failed to update earnings: $error");
     });
   }
+
 
   saveDriverDataToTripInfo() async
   {
