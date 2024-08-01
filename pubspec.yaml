@@ -54,6 +54,7 @@ dependencies:
   file_picker:
   flutter_image:
   flutter_image_compress:
+  local_auth:
 
 dev_dependencies:
   flutter_test:

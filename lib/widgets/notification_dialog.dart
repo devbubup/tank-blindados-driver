@@ -6,6 +6,7 @@ import 'package:drivers_app/pages/new_trip_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:local_auth/local_auth.dart';
 import 'loading_dialog.dart';
 
 class NotificationDialog extends StatefulWidget {
@@ -21,6 +22,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
   String tripRequestStatus = "";
   CommonMethods cMethods = CommonMethods();
   Timer? countdownTimer;
+  final LocalAuthentication auth = LocalAuthentication();
 
   @override
   void initState() {
@@ -103,6 +105,21 @@ class _NotificationDialogState extends State<NotificationDialog> {
     } else {
       print("Trip request removed");
       cMethods.displaySnackBar("Trip Request removed. Not Found.", context);
+    }
+  }
+
+  Future<bool> authenticate() async {
+    try {
+      return await auth.authenticate(
+        localizedReason: 'Please authenticate to accept the trip',
+        options: const AuthenticationOptions(
+          useErrorDialogs: true,
+          stickyAuth: true,
+        ),
+      );
+    } catch (e) {
+      print(e);
+      return false;
     }
   }
 
@@ -229,13 +246,45 @@ class _NotificationDialogState extends State<NotificationDialog> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         audioPlayer.stop();
-                        setState(() {
-                          tripRequestStatus = "accepted";
-                        });
-                        checkAvailabilityOfTripRequest(context);
-                        print("Trip request accepted button pressed");
+                        bool isAuthenticated = await authenticate();
+                        if (isAuthenticated) {
+                          setState(() {
+                            tripRequestStatus = "accepted";
+                          });
+                          checkAvailabilityOfTripRequest(context);
+                          print("Trip request accepted button pressed");
+                        } else {
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) => AlertDialog(
+                              backgroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              title: const Text(
+                                'Autenticação Falhou',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              content: const Text(
+                                'Falha na autenticação. Por favor, tente novamente.',
+                                style: TextStyle(color: Colors.white70),
+                              ),
+                              actions: <Widget>[
+                                TextButton(
+                                  child: const Text(
+                                    'OK',
+                                    style: TextStyle(color: Colors.blue),
+                                  ),
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
