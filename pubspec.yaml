@@ -55,6 +55,7 @@ dependencies:
   flutter_image:
   flutter_image_compress:
   local_auth:
+  fl_chart: ^0.68.0
 
 dev_dependencies:
   flutter_test:

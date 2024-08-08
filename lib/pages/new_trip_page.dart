@@ -1,36 +1,28 @@
 import 'dart:async';
 import 'package:drivers_app/methods/common_methods.dart';
-//import 'package:drivers_app/methods/map_theme_methods.dart';
 import 'package:drivers_app/models/trip_details.dart';
-//import 'package:drivers_app/widgets/payment_dialog.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:flutter/material.dart';//
+import 'package:flutter/material.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
-//import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-//import 'package:url_launcher/url_launcher.dart';
 
 import '../global/global_var.dart';
 import '../widgets/loading_dialog.dart';
 import '../widgets/payment_dialog.dart';
 
-
-class NewTripPage extends StatefulWidget
-{
+class NewTripPage extends StatefulWidget {
   TripDetails? newTripDetailsInfo;
 
-  NewTripPage({super.key, this.newTripDetailsInfo,});
+  NewTripPage({super.key, this.newTripDetailsInfo});
 
   @override
   State<NewTripPage> createState() => _NewTripPageState();
 }
 
-class _NewTripPageState extends State<NewTripPage>
-{
+class _NewTripPageState extends State<NewTripPage> {
   final Completer<GoogleMapController> googleMapCompleterController = Completer<GoogleMapController>();
   GoogleMapController? controllerGoogleMap;
   double googleMapPaddingFromBottom = 0;
@@ -48,33 +40,26 @@ class _NewTripPageState extends State<NewTripPage>
   CommonMethods cMethods = CommonMethods();
   double? initialFareAmount;
 
+  makeMarker() {
+    if (carMarkerIcon == null) {
+      ImageConfiguration configuration = createLocalImageConfiguration(context, size: const Size(2, 2));
 
-  makeMarker()
-  {
-    if(carMarkerIcon == null)
-    {
-      ImageConfiguration configuration = createLocalImageConfiguration(context, size: Size(2, 2));
-
-      BitmapDescriptor.fromAssetImage(configuration, "assets/images/tracking.png")
-          .then((valueIcon)
-      {
+      BitmapDescriptor.fromAssetImage(configuration, "assets/images/tracking.png").then((valueIcon) {
         carMarkerIcon = valueIcon;
       });
     }
   }
 
-  obtainDirectionAndDrawRoute(sourceLocationLatLng, destinationLocationLatLng) async
-  {
+  obtainDirectionAndDrawRoute(sourceLocationLatLng, destinationLocationLatLng) async {
     showDialog(
-        barrierDismissible: false,
-        context: context,
-        builder: (BuildContext context) => LoadingDialog(messageText: 'Please wait...',)
+      barrierDismissible: false,
+      context: context,
+      builder: (BuildContext context) => LoadingDialog(
+        messageText: 'Please wait...',
+      ),
     );
 
-    var tripDetailsInfo = await CommonMethods.getDirectionDetailsFromAPI(
-        sourceLocationLatLng,
-        destinationLocationLatLng
-    );
+    var tripDetailsInfo = await CommonMethods.getDirectionDetailsFromAPI(sourceLocationLatLng, destinationLocationLatLng);
 
     Navigator.pop(context);
 
@@ -83,12 +68,10 @@ class _NewTripPageState extends State<NewTripPage>
 
     coordinatesPolylineLatLngList.clear();
 
-    if(latLngPoints.isNotEmpty)
-    {
-      latLngPoints.forEach((PointLatLng pointLatLng)
-      {
+    if (latLngPoints.isNotEmpty) {
+      for (var pointLatLng in latLngPoints) {
         coordinatesPolylineLatLngList.add(LatLng(pointLatLng.latitude, pointLatLng.longitude));
-      });
+      }
     }
 
     //draw polyline
@@ -96,14 +79,14 @@ class _NewTripPageState extends State<NewTripPage>
 
     setState(() {
       Polyline polyline = Polyline(
-          polylineId: const PolylineId("routeID"),
-          color: Colors.amber,
-          points: coordinatesPolylineLatLngList,
-          jointType: JointType.round,
-          width: 5,
-          startCap: Cap.roundCap,
-          endCap: Cap.roundCap,
-          geodesic: true
+        polylineId: const PolylineId("routeID"),
+        color: Colors.amber,
+        points: coordinatesPolylineLatLngList,
+        jointType: JointType.round,
+        width: 5,
+        startCap: Cap.roundCap,
+        endCap: Cap.roundCap,
+        geodesic: true,
       );
 
       polyLinesSet.add(polyline);
@@ -112,30 +95,23 @@ class _NewTripPageState extends State<NewTripPage>
     //fit the polyline on google map
     LatLngBounds boundsLatLng;
 
-    if(sourceLocationLatLng.latitude > destinationLocationLatLng.latitude
-        && sourceLocationLatLng.longitude > destinationLocationLatLng.longitude)
-    {
+    if (sourceLocationLatLng.latitude > destinationLocationLatLng.latitude &&
+        sourceLocationLatLng.longitude > destinationLocationLatLng.longitude) {
       boundsLatLng = LatLngBounds(
         southwest: destinationLocationLatLng,
         northeast: sourceLocationLatLng,
       );
-    }
-    else if(sourceLocationLatLng.longitude > destinationLocationLatLng.longitude)
-    {
+    } else if (sourceLocationLatLng.longitude > destinationLocationLatLng.longitude) {
       boundsLatLng = LatLngBounds(
         southwest: LatLng(sourceLocationLatLng.latitude, destinationLocationLatLng.longitude),
         northeast: LatLng(destinationLocationLatLng.latitude, sourceLocationLatLng.longitude),
       );
-    }
-    else if(sourceLocationLatLng.latitude > destinationLocationLatLng.latitude)
-    {
+    } else if (sourceLocationLatLng.latitude > destinationLocationLatLng.latitude) {
       boundsLatLng = LatLngBounds(
         southwest: LatLng(destinationLocationLatLng.latitude, sourceLocationLatLng.longitude),
         northeast: LatLng(sourceLocationLatLng.latitude, destinationLocationLatLng.longitude),
       );
-    }
-    else
-    {
+    } else {
       boundsLatLng = LatLngBounds(
         southwest: sourceLocationLatLng,
         northeast: destinationLocationLatLng,
@@ -187,12 +163,10 @@ class _NewTripPageState extends State<NewTripPage>
     });
   }
 
-  getLiveLocationUpdatesOfDriver()
-  {
-    LatLng lastPositionLatLng = LatLng(0, 0);
+  getLiveLocationUpdatesOfDriver() {
+    LatLng lastPositionLatLng = const LatLng(0, 0);
 
-    positionStreamNewTripPage = Geolocator.getPositionStream().listen((Position positionDriver)
-    {
+    positionStreamNewTripPage = Geolocator.getPositionStream().listen((Position positionDriver) {
       driverCurrentPosition = positionDriver;
 
       LatLng driverCurrentPositionLatLng = LatLng(driverCurrentPosition!.latitude, driverCurrentPosition!.longitude);
@@ -218,45 +192,34 @@ class _NewTripPageState extends State<NewTripPage>
       updateTripDetailsInformation();
 
       //update driver location to tripRequest
-      Map updatedLocationOfDriver =
-      {
+      Map updatedLocationOfDriver = {
         "latitude": driverCurrentPosition!.latitude,
         "longitude": driverCurrentPosition!.longitude,
       };
-      FirebaseDatabase.instance.ref().child("tripRequests")
-          .child(widget.newTripDetailsInfo!.tripID!)
-          .child("driverLocation")
-          .set(updatedLocationOfDriver);
+      FirebaseDatabase.instance.ref().child("tripRequests").child(widget.newTripDetailsInfo!.tripID!).child("driverLocation").set(updatedLocationOfDriver);
     });
   }
 
-  updateTripDetailsInformation() async
-  {
-    if(!directionRequested)
-    {
+  updateTripDetailsInformation() async {
+    if (!directionRequested) {
       directionRequested = true;
 
-      if(driverCurrentPosition == null)
-      {
+      if (driverCurrentPosition == null) {
         return;
       }
 
       var driverLocationLatLng = LatLng(driverCurrentPosition!.latitude, driverCurrentPosition!.longitude);
 
       LatLng dropOffDestinationLocationLatLng;
-      if(statusOfTrip == "accepted")
-      {
+      if (statusOfTrip == "accepted") {
         dropOffDestinationLocationLatLng = widget.newTripDetailsInfo!.pickUpLatLng!;
-      }
-      else
-      {
+      } else {
         dropOffDestinationLocationLatLng = widget.newTripDetailsInfo!.dropOffLatLng!;
       }
 
       var directionDetailsInfo = await CommonMethods.getDirectionDetailsFromAPI(driverLocationLatLng, dropOffDestinationLocationLatLng);
 
-      if(directionDetailsInfo != null)
-      {
+      if (directionDetailsInfo != null) {
         directionRequested = false;
 
         setState(() {
@@ -267,12 +230,13 @@ class _NewTripPageState extends State<NewTripPage>
     }
   }
 
-
   void endTripNow() async {
     showDialog(
       barrierDismissible: false,
       context: context,
-      builder: (BuildContext context) => LoadingDialog(messageText: 'Aguarde..',),
+      builder: (BuildContext context) => LoadingDialog(
+        messageText: 'Aguarde..',
+      ),
     );
 
     var driverCurrentLocationLatLng = LatLng(driverCurrentPosition!.latitude, driverCurrentPosition!.longitude);
@@ -286,13 +250,9 @@ class _NewTripPageState extends State<NewTripPage>
       initialFareAmount = await cMethods.calculateFareAmount(directionDetailsStartTripInfo);
     }
 
-    await FirebaseDatabase.instance.ref().child("tripRequests")
-        .child(widget.newTripDetailsInfo!.tripID!)
-        .child("fareAmount").set(initialFareAmount.toString());
+    await FirebaseDatabase.instance.ref().child("tripRequests").child(widget.newTripDetailsInfo!.tripID!).child("fareAmount").set(initialFareAmount.toString());
 
-    await FirebaseDatabase.instance.ref().child("tripRequests")
-        .child(widget.newTripDetailsInfo!.tripID!)
-        .child("status").set("ended");
+    await FirebaseDatabase.instance.ref().child("tripRequests").child(widget.newTripDetailsInfo!.tripID!).child("status").set("ended");
 
     positionStreamNewTripPage!.cancel();
 
@@ -313,73 +273,58 @@ class _NewTripPageState extends State<NewTripPage>
     );
   }
 
-
   void saveFareAmountToDriverTotalEarnings(double fareAmount) async {
-    DatabaseReference driverEarningsRef = FirebaseDatabase.instance.ref()
-        .child("drivers")
-        .child(FirebaseAuth.instance.currentUser!.uid)
-        .child("earnings");
+    DatabaseReference driverEarningsRef = FirebaseDatabase.instance.ref().child("drivers").child(FirebaseAuth.instance.currentUser!.uid).child("earnings");
 
-    await driverEarningsRef.once().then((snap) {
-      if (snap.snapshot.value != null) {
-        double previousTotalEarnings = double.tryParse(snap.snapshot.value.toString()) ?? 0.0;
-        double newTotalEarnings = previousTotalEarnings + fareAmount;
-        driverEarningsRef.set(newTotalEarnings);
-      } else {
-        driverEarningsRef.set(fareAmount);
-      }
+    String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+
+    await driverEarningsRef.child(timestamp).set({
+      'amount': fareAmount,
+      'timestamp': timestamp,
     }).catchError((error) {
       print("Failed to update earnings: $error");
     });
   }
 
-
-  saveDriverDataToTripInfo() async
-  {
-    Map<String, dynamic> driverDataMap =
-    {
+  saveDriverDataToTripInfo() async {
+    Map<String, dynamic> driverDataMap = {
       "status": "accepted",
       "driverID": FirebaseAuth.instance.currentUser!.uid,
       "driverName": driverName,
       "driverPhone": driverPhone,
       "driverPhoto": driverPhoto,
-      "carDetails": carColor + " - " + carModel + " - " + carNumber,
+      "carDetails": "$carColor - $carModel - $carNumber",
     };
 
-    Map<String, dynamic> driverCurrentLocation =
-    {
+    Map<String, dynamic> driverCurrentLocation = {
       'latitude': driverCurrentPosition!.latitude.toString(),
       'longitude': driverCurrentPosition!.longitude.toString(),
     };
 
-    await FirebaseDatabase.instance.ref()
-        .child("tripRequests")
-        .child(widget.newTripDetailsInfo!.tripID!)
-        .update(driverDataMap);
+    await FirebaseDatabase.instance.ref().child("tripRequests").child(widget.newTripDetailsInfo!.tripID!).update(driverDataMap);
 
-    await FirebaseDatabase.instance.ref()
-        .child("tripRequests")
-        .child(widget.newTripDetailsInfo!.tripID!)
-        .child("driverLocation").update(driverCurrentLocation);
+    await FirebaseDatabase.instance.ref().child("tripRequests").child(widget.newTripDetailsInfo!.tripID!).child("driverLocation").update(driverCurrentLocation);
   }
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-
     saveDriverDataToTripInfo();
   }
 
   @override
-  Widget build(BuildContext context)
-  {
+  void dispose() {
+    positionStreamNewTripPage?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     makeMarker();
 
     return Scaffold(
       body: Stack(
         children: [
-
           ///google map
           GoogleMap(
             padding: EdgeInsets.only(bottom: googleMapPaddingFromBottom),
@@ -389,8 +334,7 @@ class _NewTripPageState extends State<NewTripPage>
             circles: circlesSet,
             polylines: polyLinesSet,
             initialCameraPosition: googlePlexInitialPosition,
-            onMapCreated: (GoogleMapController mapController) async
-            {
+            onMapCreated: (GoogleMapController mapController) async {
               controllerGoogleMap = mapController;
               googleMapCompleterController.complete(controllerGoogleMap);
 
@@ -398,10 +342,7 @@ class _NewTripPageState extends State<NewTripPage>
                 googleMapPaddingFromBottom = 262;
               });
 
-              var driverCurrentLocationLatLng = LatLng(
-                  driverCurrentPosition!.latitude,
-                  driverCurrentPosition!.longitude
-              );
+              var driverCurrentLocationLatLng = LatLng(driverCurrentPosition!.latitude, driverCurrentPosition!.longitude);
 
               var userPickUpLocationLatLng = widget.newTripDetailsInfo!.pickUpLatLng;
 
@@ -410,6 +351,28 @@ class _NewTripPageState extends State<NewTripPage>
               getLiveLocationUpdatesOfDriver();
             },
           ),
+
+          if (statusOfTrip == "ontrip") ...[
+            Positioned(
+              bottom: 310,
+              left: 10,
+              child: FloatingActionButton.extended(
+                onPressed: () async {
+                  if (widget.newTripDetailsInfo!.dropOffLatLng != null && driverCurrentPosition != null) {
+                    final url = Uri.parse("https://www.google.com/maps/dir/?api=1&origin=${driverCurrentPosition!.latitude},${driverCurrentPosition!.longitude}&destination=${widget.newTripDetailsInfo!.dropOffLatLng!.latitude},${widget.newTripDetailsInfo!.dropOffLatLng!.longitude}&travelmode=driving");
+                    if (await canLaunchUrl(url)) {
+                      await launchUrl(url);
+                    } else {
+                      throw 'Could not launch $url';
+                    }
+                  }
+                },
+                label: const Text("Abrir com Google Maps"),
+                icon: const Icon(Icons.directions),
+                backgroundColor: Colors.green,
+              ),
+            ),
+          ],
 
           ///trip details
           Positioned(
@@ -420,8 +383,7 @@ class _NewTripPageState extends State<NewTripPage>
               decoration: const BoxDecoration(
                 color: Colors.black87,
                 borderRadius: BorderRadius.only(topRight: Radius.circular(17), topLeft: Radius.circular(17)),
-                boxShadow:
-                [
+                boxShadow: [
                   BoxShadow(
                     color: Colors.black26,
                     blurRadius: 17,
@@ -436,7 +398,6 @@ class _NewTripPageState extends State<NewTripPage>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
                     //trip duration
                     Center(
                       child: Text(
@@ -455,7 +416,6 @@ class _NewTripPageState extends State<NewTripPage>
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-
                         //user name
                         Text(
                           widget.newTripDetailsInfo!.userName!,
@@ -468,11 +428,10 @@ class _NewTripPageState extends State<NewTripPage>
 
                         //call user icon btn
                         GestureDetector(
-                          onTap: ()
-                          {
+                          onTap: () {
                             launchUrl(
                               Uri.parse(
-                                  "tel://${widget.newTripDetailsInfo!.userPhone.toString()}"
+                                  "tel://${widget.newTripDetailsInfo!.userPhone}"
                               ),
                             );
                           },
@@ -484,7 +443,6 @@ class _NewTripPageState extends State<NewTripPage>
                             ),
                           ),
                         ),
-
                       ],
                     ),
 
@@ -493,7 +451,6 @@ class _NewTripPageState extends State<NewTripPage>
                     //pickup icon and location
                     Row(
                       children: [
-
                         Image.asset(
                           "assets/images/initial.png",
                           height: 16,
@@ -510,7 +467,6 @@ class _NewTripPageState extends State<NewTripPage>
                             ),
                           ),
                         ),
-
                       ],
                     ),
 
@@ -519,7 +475,6 @@ class _NewTripPageState extends State<NewTripPage>
                     //dropoff icon and location
                     Row(
                       children: [
-
                         Image.asset(
                           "assets/images/final.png",
                           height: 16,
@@ -536,7 +491,6 @@ class _NewTripPageState extends State<NewTripPage>
                             ),
                           ),
                         ),
-
                       ],
                     ),
 
@@ -544,11 +498,9 @@ class _NewTripPageState extends State<NewTripPage>
 
                     Center(
                       child: ElevatedButton(
-                        onPressed: () async
-                        {
+                        onPressed: () async {
                           //arrived button
-                          if(statusOfTrip == "accepted")
-                          {
+                          if (statusOfTrip == "accepted") {
                             setState(() {
                               buttonTitleText = "INICIAR";
                               buttonColor = Colors.green;
@@ -556,15 +508,12 @@ class _NewTripPageState extends State<NewTripPage>
 
                             statusOfTrip = "arrived";
 
-                            FirebaseDatabase.instance.ref()
-                                .child("tripRequests")
-                                .child(widget.newTripDetailsInfo!.tripID!)
-                                .child("status").set("arrived");
+                            FirebaseDatabase.instance.ref().child("tripRequests").child(widget.newTripDetailsInfo!.tripID!).child("status").set("arrived");
 
                             showDialog(
-                                barrierDismissible: false,
-                                context: context,
-                                builder: (BuildContext context) => LoadingDialog(messageText: 'Aguarde...',)
+                              barrierDismissible: false,
+                              context: context,
+                              builder: (BuildContext context) => LoadingDialog(messageText: 'Aguarde...',),
                             );
 
                             await obtainDirectionAndDrawRoute(
@@ -575,8 +524,7 @@ class _NewTripPageState extends State<NewTripPage>
                             Navigator.pop(context);
                           }
                           //start trip button
-                          else if(statusOfTrip == "arrived")
-                          {
+                          else if (statusOfTrip == "arrived") {
                             setState(() {
                               buttonTitleText = "FINALIZAR";
                               buttonColor = Colors.amber;
@@ -584,14 +532,10 @@ class _NewTripPageState extends State<NewTripPage>
 
                             statusOfTrip = "ontrip";
 
-                            FirebaseDatabase.instance.ref()
-                                .child("tripRequests")
-                                .child(widget.newTripDetailsInfo!.tripID!)
-                                .child("status").set("ontrip");
+                            FirebaseDatabase.instance.ref().child("tripRequests").child(widget.newTripDetailsInfo!.tripID!).child("status").set("ontrip");
                           }
                           //end trip button
-                          else if(statusOfTrip == "ontrip")
-                          {
+                          else if (statusOfTrip == "ontrip") {
                             //end the trip
                             endTripNow();
                           }
@@ -612,7 +556,6 @@ class _NewTripPageState extends State<NewTripPage>
               ),
             ),
           ),
-
         ],
       ),
     );

@@ -12,6 +12,7 @@ class TripsPage extends StatefulWidget {
 
 class _TripsPageState extends State<TripsPage> {
   String currentDriverTotalTripsCompleted = "0";
+  List<Map<String, dynamic>> recentTrips = [];
 
   @override
   void initState() {
@@ -32,11 +33,17 @@ class _TripsPageState extends State<TripsPage> {
         allTripsMap.forEach((key, value) {
           if (value["status"] != null && value["status"] == "ended" && value["driverID"] == FirebaseAuth.instance.currentUser!.uid) {
             tripsCompletedByCurrentDriver.add(key);
+            recentTrips.add({
+              "pickUpAddress": value["pickUpAddress"],
+              "dropOffAddress": value["dropOffAddress"],
+              "fareAmount": value["fareAmount"],
+            });
           }
         });
 
         setState(() {
           currentDriverTotalTripsCompleted = tripsCompletedByCurrentDriver.length.toString();
+          recentTrips = recentTrips.take(5).toList(); // Take only the last 5 trips
         });
       } else {
         setState(() {
@@ -56,72 +63,133 @@ class _TripsPageState extends State<TripsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Informações do Motorista"),
+        backgroundColor: Colors.indigo,
       ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Total Trips
-          Center(
-            child: Container(
-              color: Colors.indigo,
-              width: 300,
-              child: Padding(
-                padding: const EdgeInsets.all(18.0),
-                child: Column(
-                  children: [
-                    Image.asset("assets/images/totaltrips.png", width: 120),
-                    const SizedBox(height: 10),
-                    const Text(
-                      "Total de Viagens:",
-                      style: TextStyle(
-                        color: Colors.white,
-                      ),
-                    ),
-                    Text(
-                      currentDriverTotalTripsCompleted,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          // Check trip history
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (c) => const TripsHistoryPage()),
-              );
-            },
-            child: Center(
-              child: Container(
+      backgroundColor: Colors.black,
+      body: Padding(
+        padding: const EdgeInsets.all(18.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            // Total Trips
+            Container(
+              decoration: BoxDecoration(
                 color: Colors.indigo,
-                width: 300,
-                child: Padding(
-                  padding: const EdgeInsets.all(18.0),
-                  child: Column(
-                    children: [
-                      Image.asset("assets/images/tripscompleted.png", width: 150),
-                      const SizedBox(height: 10),
-                      const Text(
-                        "Verifique Histórico de Viagens",
-                        style: TextStyle(
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
+                borderRadius: BorderRadius.circular(10),
+              ),
+              width: double.infinity,
+              padding: const EdgeInsets.all(18.0),
+              child: Column(
+                children: [
+                  const SizedBox(height: 10),
+                  const Text(
+                    "Total de Viagens:",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                    ),
                   ),
+                  const SizedBox(height: 10),
+                  Text(
+                    currentDriverTotalTripsCompleted,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Recent Trips
+            const Text(
+              "Últimas 5 Corridas:",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Expanded(
+              child: ListView.builder(
+                itemCount: recentTrips.length,
+                itemBuilder: (context, index) {
+                  return Card(
+                    color: Colors.indigo,
+                    elevation: 5,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // pickup - fare amount
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  "Partida: ${recentTrips[index]["pickUpAddress"].toString()}",
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                "\$${recentTrips[index]["fareAmount"].toString()}",
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.greenAccent,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          // dropoff
+                          Text(
+                            "Destino: ${recentTrips[index]["dropOffAddress"].toString()}",
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Check trip history button
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.indigo,
+                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (c) => const TripsHistoryPage()),
+                );
+              },
+              child: const Text(
+                "Ver Mais",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
