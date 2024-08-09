@@ -25,6 +25,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
   TextEditingController passwordTextEditingController = TextEditingController();
   TextEditingController vehicleNumberTextEditingController = TextEditingController();
   TextEditingController renavamTextEditingController = TextEditingController();
+  TextEditingController cpfTextEditingController = TextEditingController();
+  TextEditingController pixKeyTextEditingController = TextEditingController();
+  TextEditingController bankNameTextEditingController = TextEditingController();
+  TextEditingController bankAgencyTextEditingController = TextEditingController();
+  TextEditingController bankAccountNumberTextEditingController = TextEditingController();
+
   CommonMethods cMethods = CommonMethods();
   XFile? imageFile;
   String urlOfUploadedImage = "";
@@ -107,11 +113,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text(
+          backgroundColor: Colors.white,
+          title: const Text(
             "Leia o Contrato!",
             style: TextStyle(color: Colors.red),
           ),
-          content: Text(
+          content: const Text(
             "Por favor, leia e aceite o contrato antes de continuar com o registro. Existem regras no contrato que, em caso de não cumprimento, podem levar o motorista à suspensão ou banimento do app.",
             style: TextStyle(color: Colors.black87),
           ),
@@ -120,7 +127,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text("OK", style: TextStyle(color: Colors.blue)),
+              child: const Text("OK", style: TextStyle(color: Color.fromRGBO(20, 125, 240, 1))),
             ),
           ],
         );
@@ -148,6 +155,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   buildPersonalInfoForm(),
                   buildCarInfoForm(),
                   buildDocumentUploadForm(),
+                  buildPaymentInfoForm(),
                 ],
               ),
             ),
@@ -173,7 +181,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               );
             }),
           buildButton(
-            _currentPageIndex == 2 ? "Registrar" : "Próximo",
+            _currentPageIndex == 3 ? "Registrar" : "Próximo",
                 () async {
               if (_currentPageIndex == 0) {
                 if (!isPersonalInfoComplete()) {
@@ -189,9 +197,53 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 await uploadCarInfo();
               } else if (_currentPageIndex == 2) {
                 await uploadDocuments();
+              } else if (_currentPageIndex == 3) {
+                if (!isPaymentInfoComplete()) {
+                  cMethods.displaySnackBar("Por favor, complete todas as informações de pagamento.", context);
+                  return;
+                }
+                await uploadPaymentInfo();
+
+                // Mostrar notificação para o usuário após o upload completo
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      backgroundColor: const Color.fromRGBO(0, 40, 30, 1),
+                      title: const Text(
+                        "Conta em Verificação",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      content: const Text(
+                        "Fique atento aos meios de contato inseridos, sua conta está sendo verificada e você receberá um retorno em breve.",
+                        style: TextStyle(color: Colors.white70),
+                        textAlign: TextAlign.justify,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8), // Bordas menos arredondadas
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop(); // Fechar a caixa de diálogo
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(builder: (context) => const LoginScreen()),
+                                  (Route<dynamic> route) => false,
+                            ); // Redirecionar para a tela de login
+                          },
+                          child: const Text(
+                            "OK",
+                            style: TextStyle(color: Color.fromRGBO(20, 125, 240, 1)),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                );
               }
 
-              if (_currentPageIndex < 2) {
+              if (_currentPageIndex < 3) {
                 _pageController.nextPage(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.ease,
@@ -208,7 +260,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return ElevatedButton(
       onPressed: enabled ? onPressed : null,
       style: ElevatedButton.styleFrom(
-        backgroundColor: enabled ? Colors.black : Colors.grey,
+        backgroundColor: enabled ? const Color.fromRGBO(0, 40, 30, 1) : Colors.grey,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(4),
@@ -236,7 +288,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           child: const Text(
             "Já tem uma conta? Faça login aqui.",
             style: TextStyle(
-              color: Colors.blue,
+              color: Color.fromRGBO(20, 125, 240, 1),
             ),
           ),
         ),
@@ -260,6 +312,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
         vehicleNumberTextEditingController.text.trim().isNotEmpty &&
         selectedServiceType != null &&
         carImages.values.any((image) => image != null);
+  }
+
+  bool isPaymentInfoComplete() {
+    return cpfTextEditingController.text.trim().isNotEmpty &&
+        pixKeyTextEditingController.text.trim().isNotEmpty &&
+        bankNameTextEditingController.text.trim().isNotEmpty &&
+        bankAgencyTextEditingController.text.trim().isNotEmpty &&
+        bankAccountNumberTextEditingController.text.trim().isNotEmpty;
   }
 
   Future<String> uploadImage(File imageFile, String fileName) async {
@@ -400,7 +460,36 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       await usersRef.update({"documents": driverDocumentsInfo});
 
-      // Mostrar notificação para o usuário após o upload completo
+      if (!context.mounted) return;
+      Navigator.pop(context);
+    } catch (e) {
+      Navigator.pop(context);
+      cMethods.displaySnackBar("Erro no upload dos documentos: $e", context);
+    }
+  }
+
+  Future<void> uploadPaymentInfo() async {
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) => LoadingDialog(messageText: "Fazendo upload..."),
+      );
+
+      User? userFirebase = FirebaseAuth.instance.currentUser;
+
+      DatabaseReference usersRef = FirebaseDatabase.instance.ref().child("drivers").child(userFirebase!.uid);
+
+      Map<String, dynamic> paymentInfo = {
+        "cpf": cpfTextEditingController.text.trim(),
+        "pixKey": pixKeyTextEditingController.text.trim(),
+        "bankName": bankNameTextEditingController.text.trim(),
+        "bankAgency": bankAgencyTextEditingController.text.trim(),
+        "bankAccountNumber": bankAccountNumberTextEditingController.text.trim(),
+      };
+
+      await usersRef.update({"payment_info": paymentInfo});
+
       if (!context.mounted) return;
       Navigator.pop(context);
 
@@ -408,12 +497,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            backgroundColor: Colors.grey[900],
-            title: Text(
+            backgroundColor: const Color.fromRGBO(0, 40, 30, 1),
+            title: const Text(
               "Conta em Verificação",
               style: TextStyle(color: Colors.white),
             ),
-            content: Text(
+            content: const Text(
               "Fique atento aos meios de contato inseridos, sua conta está sendo verificada e você receberá um retorno em breve.",
               style: TextStyle(color: Colors.white70),
               textAlign: TextAlign.justify,
@@ -431,9 +520,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         (Route<dynamic> route) => false,
                   ); // Redirecionar para a tela de login
                 },
-                child: Text(
+                child: const Text(
                   "OK",
-                  style: TextStyle(color: Colors.blueAccent),
+                  style: TextStyle(color: Color.fromRGBO(20, 125, 240, 1)),
                 ),
               ),
             ],
@@ -442,7 +531,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
     } catch (e) {
       Navigator.pop(context);
-      cMethods.displaySnackBar("Erro no upload dos documentos: $e", context);
+      cMethods.displaySnackBar("Erro no upload das informações de pagamento: $e", context);
     }
   }
 
@@ -486,10 +575,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const SizedBox(height: 15),
-          Text('Informações Pessoais', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black)),
+          const Text('Informações Pessoais', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black)),
           const SizedBox(height: 20),
           imageFile == null
-              ? CircleAvatar(
+              ? const CircleAvatar(
             radius: 86,
             backgroundImage: AssetImage("assets/images/avatarman.png"),
           )
@@ -513,7 +602,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Colors.blue,
+                color: Color.fromRGBO(20, 125, 240, 1),
               ),
             ),
           ),
@@ -528,10 +617,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 color: Colors.grey.shade700,
               ),
               enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.blue),
+                borderSide: BorderSide(color: Colors.grey.shade400),
               ),
               focusedBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.blue),
+                borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
               ),
             ),
             style: const TextStyle(
@@ -551,10 +640,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 color: Colors.grey.shade700,
               ),
               enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.blue),
+                borderSide: BorderSide(color: Colors.grey.shade400),
               ),
               focusedBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.blue),
+                borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
               ),
             ),
             style: const TextStyle(
@@ -574,10 +663,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 color: Colors.grey.shade700,
               ),
               enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.blue),
+                borderSide: BorderSide(color: Colors.grey.shade400),
               ),
               focusedBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.blue),
+                borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
               ),
             ),
             style: const TextStyle(
@@ -598,10 +687,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 color: Colors.grey.shade700,
               ),
               enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.blue),
+                borderSide: BorderSide(color: Colors.grey.shade400),
               ),
               focusedBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.blue),
+                borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
               ),
             ),
             style: const TextStyle(
@@ -623,7 +712,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 50),
-            Text('Informações do Veículo', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black)),
+            const Text('Informações do Veículo', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black)),
             const SizedBox(height: 22),
             const Text(
               'Complete os campos abaixo com as informações do veículo de trabalho.',
@@ -641,10 +730,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   color: Colors.grey.shade700,
                 ),
                 enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue),
+                  borderSide: BorderSide(color: Colors.grey.shade400),
                 ),
                 focusedBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue),
+                  borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
                 ),
               ),
               items: serviceCategories.keys.map((String category) {
@@ -672,10 +761,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   color: Colors.grey.shade700,
                 ),
                 enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue),
+                  borderSide: BorderSide(color: Colors.grey.shade400),
                 ),
                 focusedBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue),
+                  borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
                 ),
               ),
               items: selectedServiceType != null
@@ -707,10 +796,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   color: Colors.grey.shade700,
                 ),
                 enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue),
+                  borderSide: BorderSide(color: Colors.grey.shade400),
                 ),
                 focusedBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue),
+                  borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
                 ),
               ),
               items: selectedBrand != null
@@ -741,10 +830,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   color: Colors.grey.shade700,
                 ),
                 enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue),
+                  borderSide: BorderSide(color: Colors.grey.shade400),
                 ),
                 focusedBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue),
+                  borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
                 ),
               ),
               items: years.map((String year) {
@@ -770,10 +859,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   color: Colors.grey.shade700,
                 ),
                 enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue),
+                  borderSide: BorderSide(color: Colors.grey.shade400),
                 ),
                 focusedBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue),
+                  borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
                 ),
               ),
               items: colors.map((String color) {
@@ -801,10 +890,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   color: Colors.grey.shade700,
                 ),
                 enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue),
+                  borderSide: BorderSide(color: Colors.grey.shade400),
                 ),
                 focusedBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue),
+                  borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
                 ),
                 errorText: isPlateValid(vehicleNumberTextEditingController.text) ? null : "Placa inválida",
               ),
@@ -846,7 +935,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 50),
-            Text('Upload de Documentos', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black)),
+            const Text('Upload de Documentos', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black)),
             const SizedBox(height: 15),
             const Text(
               'Realize o upload dos arquivos exigidos abaixo. Todos os documentos abaixo do motorista e veículo são necessários para o cadastro.',
@@ -863,6 +952,152 @@ class _SignUpScreenState extends State<SignUpScreen> {
             buildDocumentFilePicker('rg', 'RG'),
             buildDocumentFilePicker('toxicologico', 'Toxicológico (Últimos 12 meses)'),
             buildDocumentFilePicker('renavam', 'Documento CRLV'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildPaymentInfoForm() {
+    return Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 50),
+            const Text('Informações de Pagamento', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black)),
+            const SizedBox(height: 15),
+            const Text(
+              'Insira as informações de pagamento abaixo. Os dados bancários devem estar associados ao nome e CPF do motorista.',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 15),
+            TextField(
+              controller: cpfTextEditingController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: "CPF",
+                labelStyle: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade700,
+                ),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey.shade400),
+                ),
+                focusedBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
+                ),
+              ),
+              style: const TextStyle(
+                color: Colors.black,
+                fontSize: 15,
+              ),
+              onChanged: (value) => setState(() {}),
+            ),
+            const SizedBox(height: 22),
+            TextField(
+              controller: pixKeyTextEditingController,
+              keyboardType: TextInputType.text,
+              decoration: InputDecoration(
+                labelText: "Chave Pix",
+                labelStyle: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade700,
+                ),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey.shade400),
+                ),
+                focusedBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
+                ),
+              ),
+              style: const TextStyle(
+                color: Colors.black,
+                fontSize: 15,
+              ),
+              onChanged: (value) => setState(() {}),
+            ),
+            const SizedBox(height: 22),
+            TextField(
+              controller: bankNameTextEditingController,
+              keyboardType: TextInputType.text,
+              decoration: InputDecoration(
+                labelText: "Nome do Banco",
+                labelStyle: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade700,
+                ),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey.shade400),
+                ),
+                focusedBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
+                ),
+              ),
+              style: const TextStyle(
+                color: Colors.black,
+                fontSize: 15,
+              ),
+              onChanged: (value) => setState(() {}),
+            ),
+            const SizedBox(height: 22),
+            TextField(
+              controller: bankAgencyTextEditingController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: "Agência Bancária",
+                labelStyle: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade700,
+                ),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey.shade400),
+                ),
+                focusedBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
+                ),
+              ),
+              style: const TextStyle(
+                color: Colors.black,
+                fontSize: 15,
+              ),
+              onChanged: (value) => setState(() {}),
+            ),
+            const SizedBox(height: 22),
+            TextField(
+              controller: bankAccountNumberTextEditingController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: "Número da Conta",
+                labelStyle: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade700,
+                ),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey.shade400),
+                ),
+                focusedBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
+                ),
+              ),
+              style: const TextStyle(
+                color: Colors.black,
+                fontSize: 15,
+              ),
+              onChanged: (value) => setState(() {}),
+            ),
+            const SizedBox(height: 15),
+            const Text(
+              '* As informações bancárias devem estar associadas ao nome e CPF do motorista.',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.red,
+              ),
+            ),
           ],
         ),
       ),
@@ -900,7 +1135,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               child: Text(
                 'Selecionar Imagem',
                 style: TextStyle(
-                  color: Colors.blue,
+                  color: Color.fromRGBO(20, 125, 240, 1),
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
@@ -956,7 +1191,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               child: Text(
                 'Selecionar Arquivo',
                 style: TextStyle(
-                  color: Colors.blue,
+                  color: Color.fromRGBO(20, 125, 240, 1),
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),

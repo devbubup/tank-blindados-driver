@@ -28,22 +28,25 @@ class _TripsPageState extends State<TripsPage> {
 
       if (snap.snapshot.value != null) {
         Map<dynamic, dynamic> allTripsMap = snap.snapshot.value as Map;
-        List<String> tripsCompletedByCurrentDriver = [];
+        List<Map<String, dynamic>> tripsCompletedByCurrentDriver = [];
 
         allTripsMap.forEach((key, value) {
           if (value["status"] != null && value["status"] == "ended" && value["driverID"] == FirebaseAuth.instance.currentUser!.uid) {
-            tripsCompletedByCurrentDriver.add(key);
-            recentTrips.add({
+            tripsCompletedByCurrentDriver.add({
               "pickUpAddress": value["pickUpAddress"],
               "dropOffAddress": value["dropOffAddress"],
               "fareAmount": value["fareAmount"],
+              "timestamp": value["timestamp"] ?? key, // Using the key as a fallback for timestamp
             });
           }
         });
 
+        // Ordena as viagens mais recentes primeiro
+        tripsCompletedByCurrentDriver.sort((a, b) => b["timestamp"].compareTo(a["timestamp"]));
+
         setState(() {
           currentDriverTotalTripsCompleted = tripsCompletedByCurrentDriver.length.toString();
-          recentTrips = recentTrips.take(5).toList(); // Take only the last 5 trips
+          recentTrips = tripsCompletedByCurrentDriver.take(5).toList(); // Pega apenas as 5 últimas corridas
         });
       } else {
         setState(() {
@@ -62,10 +65,18 @@ class _TripsPageState extends State<TripsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Informações do Motorista"),
-        backgroundColor: Colors.indigo,
+        title: const Text(
+          "Informações do Motorista",
+          style: TextStyle(
+            color: Color.fromRGBO(185, 150, 100, 1),
+          ),
+        ),
+        backgroundColor: const Color.fromRGBO(0, 40, 30, 1),
+        iconTheme: const IconThemeData(
+          color: Color.fromRGBO(185, 150, 100, 1),
+        ),
       ),
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.white,
       body: Padding(
         padding: const EdgeInsets.all(18.0),
         child: Column(
@@ -74,7 +85,7 @@ class _TripsPageState extends State<TripsPage> {
             // Total Trips
             Container(
               decoration: BoxDecoration(
-                color: Colors.indigo,
+                color: const Color.fromRGBO(0, 40, 30, 1),
                 borderRadius: BorderRadius.circular(10),
               ),
               width: double.infinity,
@@ -106,7 +117,7 @@ class _TripsPageState extends State<TripsPage> {
             const Text(
               "Últimas 5 Corridas:",
               style: TextStyle(
-                color: Colors.white,
+                color: Colors.black,
                 fontSize: 18,
               ),
             ),
@@ -116,7 +127,7 @@ class _TripsPageState extends State<TripsPage> {
                 itemCount: recentTrips.length,
                 itemBuilder: (context, index) {
                   return Card(
-                    color: Colors.indigo,
+                    color: const Color.fromRGBO(0, 40, 30, 1),
                     elevation: 5,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(4),
@@ -171,7 +182,7 @@ class _TripsPageState extends State<TripsPage> {
             // Check trip history button
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.indigo,
+                backgroundColor: const Color.fromRGBO(0, 40, 30, 1),
                 padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
               ),
               onPressed: () {

@@ -20,7 +20,7 @@ class _HomePageState extends State<HomePage> {
   final Completer<GoogleMapController> googleMapCompleterController = Completer<GoogleMapController>();
   GoogleMapController? controllerGoogleMap;
   Position? currentPositionOfDriver;
-  Color colorToShow = Colors.green;
+  Color colorToShow = const Color.fromRGBO(30, 170, 70, 1);
   String titleToShow = "FICAR ONLINE";
   bool isDriverAvailable = false;
   DatabaseReference? newTripRequestReference;
@@ -149,7 +149,7 @@ class _HomePageState extends State<HomePage> {
       goOfflineNow(); // Vai offline automaticamente quando a corrida termina
       setState(() {
         isDriverAvailable = false;
-        colorToShow = Colors.green;
+        colorToShow = const Color.fromRGBO(30, 170, 70, 1);
         titleToShow = "FICAR ONLINE";
         print("Driver state set to offline");
       });
@@ -226,7 +226,7 @@ class _HomePageState extends State<HomePage> {
           Container(
             height: 136,
             width: double.infinity,
-            color: Colors.black54,
+            color: const Color.fromRGBO(0, 40, 30, 1),
           ),
 
           ///go online offline button
@@ -245,7 +245,7 @@ class _HomePageState extends State<HomePage> {
                         builder: (BuildContext context) {
                           return Container(
                             decoration: const BoxDecoration(
-                              color: Colors.black87,
+                              color: Color.fromRGBO(0, 40, 30, 1),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.grey,
@@ -269,7 +269,7 @@ class _HomePageState extends State<HomePage> {
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
                                       fontSize: 22,
-                                      color: Colors.white70,
+                                      color: Color.fromRGBO(185, 150, 100, 1),
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -280,7 +280,7 @@ class _HomePageState extends State<HomePage> {
                                         : "Você está prestes a ficar offline, parando de receber notificações de novas corridas de usuários",
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
-                                      color: Colors.white30,
+                                      color: Color.fromRGBO(185, 150, 100, 1),
                                     ),
                                   ),
                                   const SizedBox(height: 25,),
@@ -318,7 +318,7 @@ class _HomePageState extends State<HomePage> {
                                               Navigator.pop(context);
 
                                               setState(() {
-                                                colorToShow = Colors.pink;
+                                                colorToShow = const Color.fromRGBO(240, 75, 20, 1);
                                                 titleToShow = "FICAR OFFLINE";
                                                 isDriverAvailable = true;
                                                 print("Driver state set to online");
@@ -330,7 +330,7 @@ class _HomePageState extends State<HomePage> {
                                               Navigator.pop(context);
 
                                               setState(() {
-                                                colorToShow = Colors.green;
+                                                colorToShow = const Color.fromRGBO(30, 170, 70, 1);
                                                 titleToShow = "FICAR ONLINE";
                                                 isDriverAvailable = false;
                                                 print("Driver state set to offline");
@@ -339,8 +339,8 @@ class _HomePageState extends State<HomePage> {
                                           },
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: (titleToShow == "FICAR ONLINE")
-                                                ? Colors.green
-                                                : Colors.pink,
+                                                ? const Color.fromRGBO(30, 170, 70, 1)
+                                                : const Color.fromRGBO(240, 75, 20, 1),
                                             padding: const EdgeInsets.symmetric(vertical: 16),
                                           ),
                                           child: const Text(
