@@ -1,6 +1,7 @@
 import 'package:drivers_app/authentication/login_screen.dart';
 import 'package:drivers_app/global/global_var.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -97,11 +98,80 @@ class _ProfilePageState extends State<ProfilePage> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
               ),
+              const SizedBox(height: 12),
+              // Delete account button
+              ElevatedButton(
+                onPressed: () {
+                  showDeleteAccountDialog(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 18),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4), // Menos arredondado
+                  ),
+                ),
+                child: const Text(
+                  "Delete Account",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  void showDeleteAccountDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Confirm Deletion"),
+          content: const Text("Are you sure you want to delete your account? This action cannot be undone."),
+          actions: [
+            TextButton(
+              child: const Text("Cancel"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text("Delete"),
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await deleteAccount();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> deleteAccount() async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        // Delete user from Firebase Realtime Database
+        DatabaseReference userRef = FirebaseDatabase.instance.ref().child('drivers').child(user.uid);
+        await userRef.remove();
+
+        // Delete user from Firebase Auth
+        await user.delete();
+
+        // Sign out and navigate to login screen
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (c) => const LoginScreen()),
+              (Route<dynamic> route) => false,
+        );
+      }
+    } catch (e) {
+      print("Error deleting account: $e");
+      // Handle the error accordingly
+    }
   }
 
   Widget buildTextField({required TextEditingController controller, required IconData icon}) {
