@@ -23,7 +23,7 @@ class _EarningsPageState extends State<EarningsPage> {
     getTotalEarningsOfCurrentDriver();
   }
 
-  getTotalEarningsOfCurrentDriver() async {
+  Future<void> getTotalEarningsOfCurrentDriver() async {
     DatabaseReference driverEarningsRef = FirebaseDatabase.instance
         .ref()
         .child("drivers")
@@ -53,46 +53,40 @@ class _EarningsPageState extends State<EarningsPage> {
               amount = value['amount'] != null
                   ? double.tryParse(value['amount'].toString())
                   : null;
-              earningDate = key != null
-                  ? DateTime.fromMillisecondsSinceEpoch(int.tryParse(key.toString()) ?? 0)
+              earningDate = value['timestamp'] != null
+                  ? DateTime.fromMillisecondsSinceEpoch(int.tryParse(value['timestamp'].toString()) ?? 0)
                   : null;
-
-              print("Processing earning: date=$earningDate, amount=$amount");
 
               if (amount != null && earningDate != null) {
                 if (earningDate.isAfter(fiveWeeksAgo)) {
-                  int weekNumber =
-                  ((currentWeekStart.difference(earningDate).inDays) / 7).floor();
-                  if (weekNumber < 6) {
+                  int weekNumber = ((currentWeekStart.difference(earningDate).inDays) / 7).floor() + 1;
+
+                  if (weekNumber >= 0 && weekNumber < 6) {
                     weeklyEarnings[weekNumber] =
-                        weeklyEarnings[weekNumber]! + amount;
+                        (weeklyEarnings[weekNumber] ?? 0.0) + amount;
                   }
                 }
-              } else {
-                print("Invalid earning data: amount=$amount, earningDate=$earningDate");
               }
             } catch (e) {
               print("Error processing earnings data: $e");
             }
-          } else {
-            print("Null value found in earnings data for key=$key");
           }
         });
 
         print("Weekly earnings computed: $weeklyEarnings");
 
         setState(() {
-          currentWeekEarnings = weeklyEarnings[0]!;
+          currentWeekEarnings = weeklyEarnings[0] ?? 0.0;
           lastFiveWeeksEarnings =
-              List.generate(5, (index) => weeklyEarnings[index + 1]!);
+              List.generate(5, (index) => weeklyEarnings[index + 1] ?? 0.0);
           weekDates = List.generate(6, (index) {
-            DateTime weekStart = currentWeekStart.subtract(Duration(days: index * 7));
+            DateTime weekStart = currentWeekStart.subtract(Duration(days: (index) * 7));
             DateTime weekEnd = weekStart.add(Duration(days: 6));
             return "${weekStart.day}/${weekStart.month} - ${weekEnd.day}/${weekEnd.month}";
           });
 
           lineChartData = List.generate(6, (index) {
-            return FlSpot(index.toDouble(), weeklyEarnings[index]!);
+            return FlSpot(index.toDouble(), weeklyEarnings[index] ?? 0.0);
           });
 
           hasEarningsData = true;
@@ -121,7 +115,7 @@ class _EarningsPageState extends State<EarningsPage> {
         : (maxYValue + (10 - maxYValue % 10)).ceilToDouble();
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color.fromRGBO(255, 255, 255, 1),
       appBar: AppBar(
         title: const Text(
           "Ganhos",
