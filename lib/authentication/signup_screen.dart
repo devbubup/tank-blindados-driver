@@ -23,9 +23,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
   TextEditingController userPhoneTextEditingController = TextEditingController();
   TextEditingController emailTextEditingController = TextEditingController();
   TextEditingController passwordTextEditingController = TextEditingController();
+  TextEditingController cpfPassportTextEditingController = TextEditingController();
   TextEditingController vehicleNumberTextEditingController = TextEditingController();
   TextEditingController renavamTextEditingController = TextEditingController();
-  TextEditingController cpfTextEditingController = TextEditingController();
   TextEditingController pixKeyTextEditingController = TextEditingController();
   TextEditingController bankNameTextEditingController = TextEditingController();
   TextEditingController bankAgencyTextEditingController = TextEditingController();
@@ -34,6 +34,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   CommonMethods cMethods = CommonMethods();
   XFile? imageFile;
   String urlOfUploadedImage = "";
+  bool isForeignUser = false;
 
   Map<String, XFile?> carImages = {
     'frente': null,
@@ -138,7 +139,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -260,7 +261,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return ElevatedButton(
       onPressed: enabled ? onPressed : null,
       style: ElevatedButton.styleFrom(
-        backgroundColor: enabled ? const Color.fromRGBO(0, 40, 30, 1) : Colors.grey,
+        backgroundColor: enabled ? const Color.fromARGB(255, 0, 40, 30) : Colors.grey,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(4),
@@ -315,7 +316,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   bool isPaymentInfoComplete() {
-    return cpfTextEditingController.text.trim().isNotEmpty &&
+    return cpfPassportTextEditingController.text.trim().isNotEmpty &&
         pixKeyTextEditingController.text.trim().isNotEmpty &&
         bankNameTextEditingController.text.trim().isNotEmpty &&
         bankAgencyTextEditingController.text.trim().isNotEmpty &&
@@ -357,29 +358,28 @@ class _SignUpScreenState extends State<SignUpScreen> {
       String imageIDName = DateTime.now().millisecondsSinceEpoch.toString();
       String imageURL = await uploadImage(File(imageFile!.path), imageIDName);
 
-      final User? userFirebase = (await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: emailTextEditingController.text.trim(),
-        password: passwordTextEditingController.text.trim(),
-      ).catchError((errorMsg) {
+      final User? userFirebase = FirebaseAuth.instance.currentUser;
+
+      if (userFirebase == null) {
         Navigator.pop(context);
-        cMethods.displaySnackBar(errorMsg.toString(), context);
-      })).user;
+        cMethods.displaySnackBar("Usuário não encontrado.", context);
+        return;
+      }
 
-      if (!context.mounted) return;
-      Navigator.pop(context);
-
-      DatabaseReference usersRef = FirebaseDatabase.instance.ref().child("drivers").child(userFirebase!.uid);
+      DatabaseReference usersRef = FirebaseDatabase.instance.ref().child("drivers").child(userFirebase.uid);
 
       Map<String, String> driverPersonalInfo = {
         "photo": imageURL,
         "name": userNameTextEditingController.text.trim(),
         "email": emailTextEditingController.text.trim(),
         "phone": userPhoneTextEditingController.text.trim(),
-        "id": userFirebase.uid,
+        "cpf": !isForeignUser ? cpfPassportTextEditingController.text.trim() : "",
+        "passport": isForeignUser ? cpfPassportTextEditingController.text.trim() : "",
         "blockStatus": "yes",
       };
 
-      await usersRef.set(driverPersonalInfo);
+      await usersRef.update(driverPersonalInfo);
+      Navigator.pop(context);
     } catch (e) {
       Navigator.pop(context);
       cMethods.displaySnackBar("Erro no upload das informações pessoais: $e", context);
@@ -408,7 +408,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       User? userFirebase = FirebaseAuth.instance.currentUser;
 
-      DatabaseReference usersRef = FirebaseDatabase.instance.ref().child("drivers").child(userFirebase!.uid);
+      if (userFirebase == null) {
+        Navigator.pop(context);
+        cMethods.displaySnackBar("Usuário não encontrado.", context);
+        return;
+      }
+
+      DatabaseReference usersRef = FirebaseDatabase.instance.ref().child("drivers").child(userFirebase.uid);
 
       Map<String, dynamic> driverCarInfo = {
         "carColor": selectedColor,
@@ -446,7 +452,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       User? userFirebase = FirebaseAuth.instance.currentUser;
 
-      DatabaseReference usersRef = FirebaseDatabase.instance.ref().child("drivers").child(userFirebase!.uid);
+      if (userFirebase == null) {
+        Navigator.pop(context);
+        cMethods.displaySnackBar("Usuário não encontrado.", context);
+        return;
+      }
+
+      DatabaseReference usersRef = FirebaseDatabase.instance.ref().child("drivers").child(userFirebase.uid);
 
       Map<String, dynamic> driverDocumentsInfo = {
         "negativa_antecedentes_federal": documentFilesUrls['negativa_antecedentes_federal'],
@@ -460,7 +472,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       await usersRef.update({"documents": driverDocumentsInfo});
 
-      if (!context.mounted) return;
       Navigator.pop(context);
     } catch (e) {
       Navigator.pop(context);
@@ -478,10 +489,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       User? userFirebase = FirebaseAuth.instance.currentUser;
 
-      DatabaseReference usersRef = FirebaseDatabase.instance.ref().child("drivers").child(userFirebase!.uid);
+      if (userFirebase == null) {
+        Navigator.pop(context);
+        cMethods.displaySnackBar("Usuário não encontrado.", context);
+        return;
+      }
+
+      DatabaseReference usersRef = FirebaseDatabase.instance.ref().child("drivers").child(userFirebase.uid);
 
       Map<String, dynamic> paymentInfo = {
-        "cpf": cpfTextEditingController.text.trim(),
+        "cpf": !isForeignUser ? cpfPassportTextEditingController.text.trim() : "",
+        "passport": isForeignUser ? cpfPassportTextEditingController.text.trim() : "",
         "pixKey": pixKeyTextEditingController.text.trim(),
         "bankName": bankNameTextEditingController.text.trim(),
         "bankAgency": bankAgencyTextEditingController.text.trim(),
@@ -490,7 +508,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       await usersRef.update({"payment_info": paymentInfo});
 
-      if (!context.mounted) return;
       Navigator.pop(context);
 
       showDialog(
@@ -571,135 +588,211 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Widget buildPersonalInfoForm() {
     return Padding(
       padding: const EdgeInsets.all(20.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(height: 15),
-          const Text('Informações Pessoais', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black)),
-          const SizedBox(height: 20),
-          imageFile == null
-              ? const CircleAvatar(
-            radius: 86,
-            backgroundImage: AssetImage("assets/images/avatarman.png"),
-          )
-              : Container(
-            width: 180,
-            height:  180,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.grey,
-              image: DecorationImage(
-                fit: BoxFit.cover,
-                image: FileImage(File(imageFile!.path)),
+      child: SingleChildScrollView( // Adicionando scroll
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(height: 15),
+            const Text(
+              'Informações Pessoais',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 0, 40, 30)),
+            ),
+            const SizedBox(height: 20),
+            imageFile == null
+                ? const CircleAvatar(
+              radius: 86,
+              backgroundImage: AssetImage("assets/images/avatarman.png"),
+            )
+                : Container(
+              width: 180,
+              height: 180,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.grey,
+                image: DecorationImage(
+                  fit: BoxFit.cover,
+                  image: FileImage(File(imageFile!.path)),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 10),
-          GestureDetector(
-            onTap: chooseImageFromGallery,
-            child: const Text(
-              "Selecionar Imagem",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Color.fromRGBO(20, 125, 240, 1),
+            const SizedBox(height: 10),
+            GestureDetector(
+              onTap: chooseImageFromGallery,
+              child: const Text(
+                "Selecionar Imagem",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color.fromRGBO(20, 125, 240, 1),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 20),
-          TextField(
-            controller: userNameTextEditingController,
-            keyboardType: TextInputType.text,
-            decoration: InputDecoration(
-              labelText: "Nome",
-              labelStyle: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade700,
+            const SizedBox(height: 20),
+            TextField(
+              controller: userNameTextEditingController,
+              keyboardType: TextInputType.text,
+              decoration: InputDecoration(
+                labelText: "Nome",
+                labelStyle: TextStyle(
+                  fontSize: 14,
+                  color: Color.fromRGBO(0, 40, 30, 1),
+                ),
+                enabledBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color.fromARGB(255, 185, 150, 100)),
+                ),
+                focusedBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color.fromARGB(255, 0, 40, 30)),
+                ),
               ),
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.grey.shade400),
+              style: const TextStyle(
+                color: Color.fromARGB(255, 0, 40, 30),
+                fontSize: 15,
               ),
-              focusedBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
+              onChanged: (value) => setState(() {}),
+            ),
+            const SizedBox(height: 22),
+            TextField(
+              controller: userPhoneTextEditingController,
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(
+                labelText: "Número de Contato",
+                labelStyle: TextStyle(
+                  fontSize: 14,
+                  color: Color.fromRGBO(0, 40, 30, 1),
+                ),
+                enabledBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color.fromARGB(255, 185, 150, 100)),
+                ),
+                focusedBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color.fromARGB(255, 0, 40, 30)),
+                ),
+              ),
+              style: const TextStyle(
+                color: Color.fromARGB(255, 0, 40, 30),
+                fontSize: 15,
+              ),
+              onChanged: (value) => setState(() {}),
+            ),
+            const SizedBox(height: 22),
+            TextField(
+              controller: emailTextEditingController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: InputDecoration(
+                labelText: "Email de Contato",
+                labelStyle: TextStyle(
+                  fontSize: 14,
+                  color: Color.fromRGBO(0, 40, 30, 1),
+                ),
+                enabledBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color.fromARGB(255, 185, 150, 100)),
+                ),
+                focusedBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color.fromARGB(255, 0, 40, 30)),
+                ),
+              ),
+              style: const TextStyle(
+                color: Color.fromARGB(255, 0, 40, 30),
+                fontSize: 15,
+              ),
+              onChanged: (value) => setState(() {}),
+            ),
+            const SizedBox(height: 22),
+            TextField(
+              controller: passwordTextEditingController,
+              obscureText: true,
+              keyboardType: TextInputType.text,
+              decoration: InputDecoration(
+                labelText: "Senha",
+                labelStyle: TextStyle(
+                  fontSize: 14,
+                  color: Color.fromRGBO(0, 40, 30, 1),
+                ),
+                enabledBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color.fromARGB(255, 185, 150, 100)),
+                ),
+                focusedBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color.fromARGB(255, 0, 40, 30)),
+                ),
+              ),
+              style: const TextStyle(
+                color: Color.fromARGB(255, 0, 40, 30),
+                fontSize: 15,
+              ),
+              onChanged: (value) => setState(() {}),
+            ),
+            const SizedBox(height: 22),
+            TextField(
+              controller: cpfPassportTextEditingController,
+              keyboardType: TextInputType.text,
+              decoration: InputDecoration(
+                labelText: isForeignUser ? "Passaporte" : "CPF",
+                labelStyle: TextStyle(
+                  fontSize: 14,
+                  color: Color.fromRGBO(0, 40, 30, 1),
+                ),
+                enabledBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color.fromARGB(255, 185, 150, 100)),
+                ),
+                focusedBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color.fromARGB(255, 0, 40, 30)),
+                ),
+              ),
+              style: const TextStyle(
+                color: Color.fromARGB(255, 0, 40, 30),
+                fontSize: 15,
               ),
             ),
-            style: const TextStyle(
-              color: Colors.black,
-              fontSize: 15,
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      isForeignUser = false;
+                      cpfPassportTextEditingController.clear();
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    backgroundColor: isForeignUser
+                        ? Colors.grey.shade300
+                        : const Color.fromARGB(255, 0, 40, 30),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    "CPF",
+                    style: TextStyle(fontSize: 14, color: Colors.white),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      isForeignUser = true;
+                      cpfPassportTextEditingController.clear();
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    backgroundColor: isForeignUser
+                        ? const Color.fromARGB(255, 0, 40, 30)
+                        : Colors.grey.shade300,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    "Passaporte",
+                    style: TextStyle(fontSize: 14, color: Colors.white),
+                  ),
+                ),
+              ],
             ),
-            onChanged: (value) => setState(() {}),
-          ),
-          const SizedBox(height: 22),
-          TextField(
-            controller: userPhoneTextEditingController,
-            keyboardType: TextInputType.phone,
-            decoration: InputDecoration(
-              labelText: "Número de Contato",
-              labelStyle: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade700,
-              ),
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.grey.shade400),
-              ),
-              focusedBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
-              ),
-            ),
-            style: const TextStyle(
-              color: Colors.black,
-              fontSize: 15,
-            ),
-            onChanged: (value) => setState(() {}),
-          ),
-          const SizedBox(height: 22),
-          TextField(
-            controller: emailTextEditingController,
-            keyboardType: TextInputType.emailAddress,
-            decoration: InputDecoration(
-              labelText: "Email de Contato",
-              labelStyle: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade700,
-              ),
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.grey.shade400),
-              ),
-              focusedBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
-              ),
-            ),
-            style: const TextStyle(
-              color: Colors.black,
-              fontSize: 15,
-            ),
-            onChanged: (value) => setState(() {}),
-          ),
-          const SizedBox(height: 22),
-          TextField(
-            controller: passwordTextEditingController,
-            obscureText: true,
-            keyboardType: TextInputType.text,
-            decoration: InputDecoration(
-              labelText: "Senha",
-              labelStyle: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade700,
-              ),
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.grey.shade400),
-              ),
-              focusedBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
-              ),
-            ),
-            style: const TextStyle(
-              color: Colors.black,
-              fontSize: 15,
-            ),
-            onChanged: (value) => setState(() {}),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -712,7 +805,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 50),
-            const Text('Informações do Veículo', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black)),
+            const Text('Informações do Veículo', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 0, 40, 30))),
             const SizedBox(height: 22),
             const Text(
               'Complete os campos abaixo com as informações do veículo de trabalho.',
@@ -727,13 +820,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 labelText: "Categoria de Serviço",
                 labelStyle: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey.shade700,
+                  color: Color.fromRGBO(0, 40, 30, 1),
                 ),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey.shade400),
+                enabledBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color.fromARGB(255, 185, 150, 100)),
                 ),
                 focusedBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
+                  borderSide: BorderSide(color: Color.fromARGB(255, 0, 40, 30)),
                 ),
               ),
               items: serviceCategories.keys.map((String category) {
@@ -758,13 +851,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 labelText: "Marca",
                 labelStyle: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey.shade700,
+                  color: Color.fromRGBO(0, 40, 30, 1),
                 ),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey.shade400),
+                enabledBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color.fromARGB(255, 185, 150, 100)),
                 ),
                 focusedBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
+                  borderSide: BorderSide(color: Color.fromARGB(255, 0, 40, 30)),
                 ),
               ),
               items: selectedServiceType != null
@@ -793,13 +886,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 labelText: "Modelo",
                 labelStyle: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey.shade700,
+                  color: Color.fromRGBO(0, 40, 30, 1),
                 ),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey.shade400),
+                enabledBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color.fromARGB(255, 185, 150, 100)),
                 ),
                 focusedBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
+                  borderSide: BorderSide(color: Color.fromARGB(255, 0, 40, 30)),
                 ),
               ),
               items: selectedBrand != null
@@ -827,13 +920,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 labelText: "Ano do Veículo",
                 labelStyle: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey.shade700,
+                  color: Color.fromRGBO(0, 40, 30, 1),
                 ),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey.shade400),
+                enabledBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color.fromARGB(255, 185, 150, 100)),
                 ),
                 focusedBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
+                  borderSide: BorderSide(color: Color.fromARGB(255, 0, 40, 30)),
                 ),
               ),
               items: years.map((String year) {
@@ -856,13 +949,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 labelText: "Cor do Veículo",
                 labelStyle: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey.shade700,
+                  color: Color.fromRGBO(0, 40, 30, 1),
                 ),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey.shade400),
+                enabledBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color.fromARGB(255, 185, 150, 100)),
                 ),
                 focusedBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
+                  borderSide: BorderSide(color: Color.fromARGB(255, 0, 40, 30)),
                 ),
               ),
               items: colors.map((String color) {
@@ -887,18 +980,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 labelText: "Placa do Veículo",
                 labelStyle: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey.shade700,
+                  color: Color.fromRGBO(0, 40, 30, 1),
                 ),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey.shade400),
+                enabledBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color.fromARGB(255, 185, 150, 100)),
                 ),
                 focusedBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
+                  borderSide: BorderSide(color: Color.fromARGB(255, 0, 40, 30)),
                 ),
                 errorText: isPlateValid(vehicleNumberTextEditingController.text) ? null : "Placa inválida",
               ),
               style: const TextStyle(
-                color: Colors.black,
+                color: Color.fromARGB(255, 0, 40, 30),
                 fontSize: 15,
               ),
               onChanged: (value) => setState(() {}),
@@ -935,7 +1028,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 50),
-            const Text('Upload de Documentos', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black)),
+            const Text('Upload de Documentos', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 0, 40, 30))),
             const SizedBox(height: 15),
             const Text(
               'Realize o upload dos arquivos exigidos abaixo. Todos os documentos abaixo do motorista e veículo são necessários para o cadastro.',
@@ -966,10 +1059,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 50),
-            const Text('Informações de Pagamento', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black)),
+            const Text('Informações de Pagamento', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 0, 40, 30))),
             const SizedBox(height: 15),
             const Text(
-              'Insira as informações de pagamento abaixo. Os dados bancários devem estar associados ao nome e CPF do motorista.',
+              'Insira as informações de pagamento abaixo. Os dados bancários devem estar associados ao nome e CPF/Passaporte do motorista.',
               style: TextStyle(
                 fontSize: 13,
                 color: Colors.grey,
@@ -977,26 +1070,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
             ),
             const SizedBox(height: 15),
             TextField(
-              controller: cpfTextEditingController,
-              keyboardType: TextInputType.number,
+              controller: cpfPassportTextEditingController,
+              keyboardType: TextInputType.text,
               decoration: InputDecoration(
-                labelText: "CPF",
+                labelText: isForeignUser ? "Passaporte" : "CPF",
                 labelStyle: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey.shade700,
+                  color: Color.fromRGBO(0, 40, 30, 1),
                 ),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey.shade400),
+                enabledBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color.fromARGB(255, 185, 150, 100)),
                 ),
                 focusedBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
+                  borderSide: BorderSide(color: Color.fromARGB(255, 0, 40, 30)),
                 ),
               ),
               style: const TextStyle(
-                color: Colors.black,
+                color: Color.fromARGB(255, 0, 40, 30),
                 fontSize: 15,
               ),
-              onChanged: (value) => setState(() {}),
             ),
             const SizedBox(height: 22),
             TextField(
@@ -1006,17 +1098,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 labelText: "Chave Pix",
                 labelStyle: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey.shade700,
+                  color: Color.fromRGBO(0, 40, 30, 1),
                 ),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey.shade400),
+                enabledBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color.fromARGB(255, 185, 150, 100)),
                 ),
                 focusedBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
+                  borderSide: BorderSide(color: Color.fromARGB(255, 0, 40, 30)),
                 ),
               ),
               style: const TextStyle(
-                color: Colors.black,
+                color: Color.fromARGB(255, 0, 40, 30),
                 fontSize: 15,
               ),
               onChanged: (value) => setState(() {}),
@@ -1029,17 +1121,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 labelText: "Nome do Banco",
                 labelStyle: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey.shade700,
+                  color: Color.fromRGBO(0, 40, 30, 1),
                 ),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey.shade400),
+                enabledBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color.fromARGB(255, 185, 150, 100)),
                 ),
                 focusedBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
+                  borderSide: BorderSide(color: Color.fromARGB(255, 0, 40, 30)),
                 ),
               ),
               style: const TextStyle(
-                color: Colors.black,
+                color: Color.fromARGB(255, 0, 40, 30),
                 fontSize: 15,
               ),
               onChanged: (value) => setState(() {}),
@@ -1052,17 +1144,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 labelText: "Agência Bancária",
                 labelStyle: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey.shade700,
+                  color: Color.fromRGBO(0, 40, 30, 1),
                 ),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey.shade400),
+                enabledBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color.fromARGB(255, 185, 150, 100)),
                 ),
                 focusedBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
+                  borderSide: BorderSide(color: Color.fromARGB(255, 0, 40, 30)),
                 ),
               ),
               style: const TextStyle(
-                color: Colors.black,
+                color: Color.fromARGB(255, 0, 40, 30),
                 fontSize: 15,
               ),
               onChanged: (value) => setState(() {}),
@@ -1075,24 +1167,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 labelText: "Número da Conta",
                 labelStyle: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey.shade700,
+                  color: Color.fromRGBO(0, 40, 30, 1),
                 ),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey.shade400),
+                enabledBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Color.fromARGB(255, 185, 150, 100)),
                 ),
                 focusedBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
+                  borderSide: BorderSide(color: Color.fromARGB(255, 0, 40, 30)),
                 ),
               ),
               style: const TextStyle(
-                color: Colors.black,
+                color: Color.fromARGB(255, 0, 40, 30),
                 fontSize: 15,
               ),
               onChanged: (value) => setState(() {}),
             ),
             const SizedBox(height: 15),
             const Text(
-              '* As informações bancárias devem estar associadas ao nome e CPF do motorista.',
+              '* As informações bancárias devem estar associadas ao nome e CPF/Passaporte do motorista.',
               style: TextStyle(
                 fontSize: 13,
                 color: Colors.red,
@@ -1114,7 +1206,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: Colors.grey,
+            color: Color.fromRGBO(0, 40, 30, 1),
           ),
         ),
         const SizedBox(height: 5),
@@ -1170,7 +1262,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: Colors.grey,
+            color: Color.fromRGBO(0, 40, 30, 1),
           ),
         ),
         const SizedBox(height: 5),

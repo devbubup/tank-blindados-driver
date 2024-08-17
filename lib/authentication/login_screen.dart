@@ -71,7 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFFFFFFF), // Cor de fundo branco
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -90,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
-                  color: Color.fromRGBO(0, 40, 30, 1),
+                  color: Color(0xFF00281E), // Azul marinho
                 ),
               ),
               const SizedBox(height: 40),
@@ -101,13 +101,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   labelText: "Email",
                   labelStyle: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey.shade600,
+                    color: Color(0xFFB99664), // Bege
                   ),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey.shade400),
+                  enabledBorder: const UnderlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFFB99664)), // Bege
                   ),
                   focusedBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
+                    borderSide: BorderSide(color: Color(0xFF00281E)), // Azul marinho
                   ),
                 ),
                 style: const TextStyle(
@@ -124,13 +124,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   labelText: "Senha",
                   labelStyle: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey.shade600,
+                    color: Color(0xFFB99664), // Bege
                   ),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey.shade400),
+                  enabledBorder: const UnderlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFFB99664)), // Bege
                   ),
                   focusedBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color.fromRGBO(20, 125, 240, 1)),
+                    borderSide: BorderSide(color: Color(0xFF00281E)), // Azul marinho
                   ),
                 ),
                 style: const TextStyle(
@@ -142,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ElevatedButton(
                 onPressed: checkIfNetworkIsAvailable,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromRGBO(30, 170, 70, 1),
+                  backgroundColor: const Color(0xFF00281E), // Azul marinho
                   padding: const EdgeInsets.symmetric(horizontal: 70, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -153,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: Color(0xFFFFFFFF), // Branco
                   ),
                 ),
               ),
@@ -166,7 +166,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: const Text(
                     "Não tem uma conta de motorista? Registre aqui!",
                     style: TextStyle(
-                      color: Color.fromRGBO(20, 125, 240, 1),
+                      color: Color(0xFF00281E), // Azul marinho
                     ),
                   ),
                 ),
