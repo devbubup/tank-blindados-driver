@@ -5,7 +5,6 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import '../methods/common_methods.dart';
 import '../widgets/loading_dialog.dart';
-import 'package:drivers_app/pages/dashboard.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -22,8 +21,8 @@ class _LoginScreenState extends State<LoginScreen> {
   checkIfNetworkIsAvailable() {
     signInFormValidation();
   }
-  signInFormValidation() {
 
+  signInFormValidation() {
     if (!emailTextEditingController.text.contains("@")) {
       cMethods.displaySnackBar("Insira um email válido.", context);
     } else if (passwordTextEditingController.text.trim().length < 5) {
@@ -56,7 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
       usersRef.once().then((snap) {
         if (snap.snapshot.value != null) {
           if ((snap.snapshot.value as Map)["blockStatus"] == "no") {
-            Navigator.push(context, MaterialPageRoute(builder: (c) => Dashboard()));
+            Navigator.push(context, MaterialPageRoute(builder: (c) => const Dashboard()));
           } else {
             FirebaseAuth.instance.signOut();
             cMethods.displaySnackBar("Sua conta foi bloqueada. Para mais informações, entre em contato com email@gmail.com", context);
@@ -72,7 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFFFFFFF), // Cor de fundo branco
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -81,7 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 60),
               Center(
                 child: Image.asset(
-                  "assets/images/uberexec.png",
+                  "assets/images/logo.png",
                   width: 220,
                 ),
               ),
@@ -91,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: Color(0xFF00281E), // Azul marinho
                 ),
               ),
               const SizedBox(height: 40),
@@ -102,13 +101,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   labelText: "Email",
                   labelStyle: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey.shade600,
+                    color: Color(0xFFB99664), // Bege
                   ),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey.shade400),
+                  enabledBorder: const UnderlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFFB99664)), // Bege
                   ),
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.blue.shade900),
+                  focusedBorder: const UnderlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF00281E)), // Azul marinho
                   ),
                 ),
                 style: const TextStyle(
@@ -125,13 +124,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   labelText: "Senha",
                   labelStyle: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey.shade600,
+                    color: Color(0xFFB99664), // Bege
                   ),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey.shade400),
+                  enabledBorder: const UnderlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFFB99664)), // Bege
                   ),
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.blue.shade900),
+                  focusedBorder: const UnderlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF00281E)), // Azul marinho
                   ),
                 ),
                 style: const TextStyle(
@@ -143,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ElevatedButton(
                 onPressed: checkIfNetworkIsAvailable,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue.shade900,
+                  backgroundColor: const Color(0xFF00281E), // Azul marinho
                   padding: const EdgeInsets.symmetric(horizontal: 70, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -154,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: Color(0xFFFFFFFF), // Branco
                   ),
                 ),
               ),
@@ -162,12 +161,12 @@ class _LoginScreenState extends State<LoginScreen> {
               Center(
                 child: TextButton(
                   onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (c) => SignUpScreen()));
+                    Navigator.push(context, MaterialPageRoute(builder: (c) => const SignUpScreen()));
                   },
                   child: const Text(
                     "Não tem uma conta de motorista? Registre aqui!",
                     style: TextStyle(
-                      color: Colors.blue,
+                      color: Color(0xFF00281E), // Azul marinho
                     ),
                   ),
                 ),

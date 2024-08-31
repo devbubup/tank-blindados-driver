@@ -14,7 +14,7 @@ import '../widgets/loading_dialog.dart';
 import '../widgets/payment_dialog.dart';
 
 class NewTripPage extends StatefulWidget {
-  TripDetails? newTripDetailsInfo;
+  final TripDetails? newTripDetailsInfo;
 
   NewTripPage({super.key, this.newTripDetailsInfo});
 
@@ -28,15 +28,15 @@ class _NewTripPageState extends State<NewTripPage> {
   double googleMapPaddingFromBottom = 0;
   List<LatLng> coordinatesPolylineLatLngList = [];
   PolylinePoints polylinePoints = PolylinePoints();
-  Set<Marker> markersSet = Set<Marker>();
-  Set<Circle> circlesSet = Set<Circle>();
-  Set<Polyline> polyLinesSet = Set<Polyline>();
+  Set<Marker> markersSet = {};
+  Set<Circle> circlesSet = {};
+  Set<Polyline> polyLinesSet = {};
   BitmapDescriptor? carMarkerIcon;
   bool directionRequested = false;
   String statusOfTrip = "accepted";
   String durationText = "", distanceText = "";
   String buttonTitleText = "CHEGOU";
-  Color buttonColor = Colors.indigoAccent;
+  Color buttonColor = const Color.fromRGBO(0, 40, 30, 1); // Cor inicial do botão
   CommonMethods cMethods = CommonMethods();
   double? initialFareAmount;
 
@@ -80,7 +80,7 @@ class _NewTripPageState extends State<NewTripPage> {
     setState(() {
       Polyline polyline = Polyline(
         polylineId: const PolylineId("routeID"),
-        color: Colors.amber,
+        color: const Color.fromRGBO(185, 150, 100, 1), // Usando a cor bege
         points: coordinatesPolylineLatLngList,
         jointType: JointType.round,
         width: 5,
@@ -141,20 +141,20 @@ class _NewTripPageState extends State<NewTripPage> {
     //add circle
     Circle sourceCircle = Circle(
       circleId: const CircleId('sourceCircleID'),
-      strokeColor: Colors.orange,
+      strokeColor: const Color.fromRGBO(185, 150, 100, 1), // Cor bege
       strokeWidth: 4,
       radius: 14,
       center: sourceLocationLatLng,
-      fillColor: Colors.green,
+      fillColor: const Color.fromRGBO(0, 40, 30, 0.7), // Fundo semi-transparente
     );
 
     Circle destinationCircle = Circle(
       circleId: const CircleId('destinationCircleID'),
-      strokeColor: Colors.green,
+      strokeColor: const Color.fromRGBO(185, 150, 100, 1), // Cor bege
       strokeWidth: 4,
       radius: 14,
       center: destinationLocationLatLng,
-      fillColor: Colors.orange,
+      fillColor: const Color.fromRGBO(0, 40, 30, 0.7), // Fundo semi-transparente
     );
 
     setState(() {
@@ -369,7 +369,7 @@ class _NewTripPageState extends State<NewTripPage> {
                 },
                 label: const Text("Abrir com Google Maps"),
                 icon: const Icon(Icons.directions),
-                backgroundColor: Colors.green,
+                backgroundColor: const Color.fromRGBO(0, 40, 30, 1), // Cor verde
               ),
             ),
           ],
@@ -380,10 +380,10 @@ class _NewTripPageState extends State<NewTripPage> {
             right: 0,
             bottom: 0,
             child: Container(
-              decoration: const BoxDecoration(
-                color: Colors.black87,
-                borderRadius: BorderRadius.only(topRight: Radius.circular(17), topLeft: Radius.circular(17)),
-                boxShadow: [
+              decoration: BoxDecoration(
+                color: const Color.fromRGBO(0, 40, 30, 0.9), // Fundo semi-transparente
+                borderRadius: const BorderRadius.only(topRight: Radius.circular(17), topLeft: Radius.circular(17)),
+                boxShadow: const [
                   BoxShadow(
                     color: Colors.black26,
                     blurRadius: 17,
@@ -403,7 +403,7 @@ class _NewTripPageState extends State<NewTripPage> {
                       child: Text(
                         durationText + " - " + distanceText,
                         style: const TextStyle(
-                          color: Colors.green,
+                          color: Colors.white,
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
                         ),
@@ -420,7 +420,7 @@ class _NewTripPageState extends State<NewTripPage> {
                         Text(
                           widget.newTripDetailsInfo!.userName!,
                           style: const TextStyle(
-                            color: Colors.green,
+                            color: Colors.white,
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
@@ -439,7 +439,7 @@ class _NewTripPageState extends State<NewTripPage> {
                             padding: EdgeInsets.only(right: 10),
                             child: Icon(
                               Icons.phone_android_outlined,
-                              color: Colors.grey,
+                              color: Colors.white70,
                             ),
                           ),
                         ),
@@ -463,7 +463,7 @@ class _NewTripPageState extends State<NewTripPage> {
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 18,
-                              color: Colors.grey,
+                              color: Colors.white70,
                             ),
                           ),
                         ),
@@ -487,7 +487,7 @@ class _NewTripPageState extends State<NewTripPage> {
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 18,
-                              color: Colors.grey,
+                              color: Colors.white70,
                             ),
                           ),
                         ),
@@ -503,7 +503,7 @@ class _NewTripPageState extends State<NewTripPage> {
                           if (statusOfTrip == "accepted") {
                             setState(() {
                               buttonTitleText = "INICIAR";
-                              buttonColor = Colors.green;
+                              buttonColor = const Color.fromRGBO(0, 40, 30, 1); // Cor verde
                             });
 
                             statusOfTrip = "arrived";
@@ -527,7 +527,7 @@ class _NewTripPageState extends State<NewTripPage> {
                           else if (statusOfTrip == "arrived") {
                             setState(() {
                               buttonTitleText = "FINALIZAR";
-                              buttonColor = Colors.amber;
+                              buttonColor = const Color.fromRGBO(185, 150, 100, 1); // Cor âmbar
                             });
 
                             statusOfTrip = "ontrip";

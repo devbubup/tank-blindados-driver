@@ -36,6 +36,18 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text(
+          "Perfil",
+          style: TextStyle(
+            color: Color.fromRGBO(185, 150, 100, 1),
+          ),
+        ),
+        backgroundColor: const Color.fromRGBO(0, 40, 30, 1),
+        iconTheme: const IconThemeData(
+          color: Color.fromRGBO(185, 150, 100, 1),
+        ),
+      ),
       body: Center(
         child: SingleChildScrollView(
           child: Column(
@@ -87,8 +99,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   Navigator.push(context, MaterialPageRoute(builder: (c) => const LoginScreen()));
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue.shade900,
-                  padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 18),
+                  backgroundColor: const Color.fromRGBO(30, 170, 70, 1),
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(4), // Menos arredondado
                   ),
@@ -105,14 +117,14 @@ class _ProfilePageState extends State<ProfilePage> {
                   showDeleteAccountDialog(context);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 18),
+                  backgroundColor: const Color.fromRGBO(240, 75, 20, 1),
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(4), // Menos arredondado
                   ),
                 ),
                 child: const Text(
-                  "Delete Account",
+                  "Deletar Conta",
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
               ),
@@ -128,17 +140,17 @@ class _ProfilePageState extends State<ProfilePage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text("Confirm Deletion"),
-          content: const Text("Are you sure you want to delete your account? This action cannot be undone."),
+          title: const Text("Confirmação de Deleção"),
+          content: const Text("Você tem certeza que deseja deletar sua conta? Essa ação não pode ser desfeita."),
           actions: [
             TextButton(
-              child: const Text("Cancel"),
+              child: const Text("Cancelar"),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
             TextButton(
-              child: const Text("Delete"),
+              child: const Text("Deletar"),
               onPressed: () async {
                 Navigator.of(context).pop();
                 await deleteAccount();
@@ -186,7 +198,7 @@ class _ProfilePageState extends State<ProfilePage> {
           filled: true,
           fillColor: Colors.white,
           border: OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.black, width: 2),
+            borderSide: const BorderSide(color: Colors.black, width: 2),
             borderRadius: BorderRadius.circular(4), // Menos arredondado
           ),
           prefixIcon: Icon(icon, color: Colors.black),

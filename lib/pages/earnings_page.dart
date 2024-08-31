@@ -15,6 +15,7 @@ class _EarningsPageState extends State<EarningsPage> {
   List<double> lastFiveWeeksEarnings = List.filled(5, 0.0);
   List<FlSpot> lineChartData = [];
   List<String> weekDates = [];
+  bool hasEarningsData = false;
 
   @override
   void initState() {
@@ -22,14 +23,17 @@ class _EarningsPageState extends State<EarningsPage> {
     getTotalEarningsOfCurrentDriver();
   }
 
-  getTotalEarningsOfCurrentDriver() async {
-    DatabaseReference driverEarningsRef = FirebaseDatabase.instance.ref()
+  Future<void> getTotalEarningsOfCurrentDriver() async {
+    DatabaseReference driverEarningsRef = FirebaseDatabase.instance
+        .ref()
         .child("drivers")
         .child(FirebaseAuth.instance.currentUser!.uid)
         .child("earnings");
 
     driverEarningsRef.onValue.listen((event) {
       if (event.snapshot.value != null) {
+        print("Earnings data received: ${event.snapshot.value}");
+
         Map earningsMap = event.snapshot.value as Map;
 
         DateTime now = DateTime.now();
@@ -41,28 +45,56 @@ class _EarningsPageState extends State<EarningsPage> {
         };
 
         earningsMap.forEach((key, value) {
-          double amount = value['amount'];
-          DateTime earningDate = DateTime.fromMillisecondsSinceEpoch(int.parse(key));
-          if (earningDate.isAfter(fiveWeeksAgo)) {
-            int weekNumber = ((currentWeekStart.difference(earningDate).inDays) / 7).floor();
-            if (weekNumber < 6) {
-              weeklyEarnings[weekNumber] = weeklyEarnings[weekNumber]! + amount;
+          if (value != null) {
+            double? amount;
+            DateTime? earningDate;
+
+            try {
+              amount = value['amount'] != null
+                  ? double.tryParse(value['amount'].toString())
+                  : null;
+              earningDate = value['timestamp'] != null
+                  ? DateTime.fromMillisecondsSinceEpoch(int.tryParse(value['timestamp'].toString()) ?? 0)
+                  : null;
+
+              if (amount != null && earningDate != null) {
+                if (earningDate.isAfter(fiveWeeksAgo)) {
+                  int weekNumber = ((currentWeekStart.difference(earningDate).inDays) / 7).floor() + 1;
+
+                  if (weekNumber >= 0 && weekNumber < 6) {
+                    weeklyEarnings[weekNumber] =
+                        (weeklyEarnings[weekNumber] ?? 0.0) + amount;
+                  }
+                }
+              }
+            } catch (e) {
+              print("Error processing earnings data: $e");
             }
           }
         });
 
+        print("Weekly earnings computed: $weeklyEarnings");
+
         setState(() {
-          currentWeekEarnings = weeklyEarnings[0]!;
-          lastFiveWeeksEarnings = List.generate(5, (index) => weeklyEarnings[index + 1]!);
+          currentWeekEarnings = weeklyEarnings[0] ?? 0.0;
+          lastFiveWeeksEarnings =
+              List.generate(5, (index) => weeklyEarnings[index + 1] ?? 0.0);
           weekDates = List.generate(6, (index) {
-            DateTime weekStart = currentWeekStart.subtract(Duration(days: index * 7));
+            DateTime weekStart = currentWeekStart.subtract(Duration(days: (index) * 7));
             DateTime weekEnd = weekStart.add(Duration(days: 6));
             return "${weekStart.day}/${weekStart.month} - ${weekEnd.day}/${weekEnd.month}";
           });
 
           lineChartData = List.generate(6, (index) {
-            return FlSpot(index.toDouble(), weeklyEarnings[index]!);
+            return FlSpot(index.toDouble(), weeklyEarnings[index] ?? 0.0);
           });
+
+          hasEarningsData = true;
+        });
+      } else {
+        print("No earnings data found.");
+        setState(() {
+          hasEarningsData = false;
         });
       }
     });
@@ -70,24 +102,42 @@ class _EarningsPageState extends State<EarningsPage> {
 
   @override
   Widget build(BuildContext context) {
-    double maxYValue = (lineChartData.map((spot) => spot.y).reduce((a, b) => a > b ? a : b).ceilToDouble() + 10).ceilToDouble();
-    maxYValue = maxYValue % 10 == 0 ? maxYValue : (maxYValue + (10 - maxYValue % 10)).ceilToDouble();
+    double maxYValue = (lineChartData.isNotEmpty
+        ? lineChartData
+        .map((spot) => spot.y)
+        .reduce((a, b) => a > b ? a : b)
+        .ceilToDouble() +
+        10
+        : 10)
+        .ceilToDouble();
+    maxYValue = maxYValue % 10 == 0
+        ? maxYValue
+        : (maxYValue + (10 - maxYValue % 10)).ceilToDouble();
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color.fromRGBO(255, 255, 255, 1),
       appBar: AppBar(
-        title: Text("Ganhos"),
-        backgroundColor: Colors.indigo,
+        title: const Text(
+          "Ganhos",
+          style: TextStyle(
+            color: Color.fromRGBO(185, 150, 100, 1),
+          ),
+        ),
+        backgroundColor: const Color.fromRGBO(0, 40, 30, 1),
+        iconTheme: const IconThemeData(
+          color: Color.fromRGBO(185, 150, 100, 1),
+        ),
       ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(18.0),
-          child: Column(
+          child: hasEarningsData
+              ? Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.indigo,
+                  color: const Color.fromRGBO(0, 40, 30, 1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 width: double.infinity,
@@ -118,24 +168,24 @@ class _EarningsPageState extends State<EarningsPage> {
               const Text(
                 "Ganhos das Últimas 5 Semanas:",
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Colors.black,
                   fontSize: 18,
                 ),
               ),
               const SizedBox(height: 10),
               SizedBox(
-                height: 150, // Aumentar a altura dos boxes
+                height: 150,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: lastFiveWeeksEarnings.length,
                   itemBuilder: (context, index) {
                     return Container(
-                      width: 250, // Aumentar a largura dos boxes
+                      width: 250,
                       margin: const EdgeInsets.symmetric(horizontal: 10),
                       decoration: BoxDecoration(
-                        color: Colors.indigo,
+                        color: const Color.fromRGBO(0, 40, 30, 1),
                         borderRadius: BorderRadius.circular(15),
-                        boxShadow: [
+                        boxShadow: const [
                           BoxShadow(
                             color: Colors.black26,
                             blurRadius: 5,
@@ -150,7 +200,7 @@ class _EarningsPageState extends State<EarningsPage> {
                           children: [
                             Text(
                               "Semana ${weekDates[index + 1]}:",
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -159,7 +209,7 @@ class _EarningsPageState extends State<EarningsPage> {
                             const SizedBox(height: 10),
                             Text(
                               "\$${lastFiveWeeksEarnings[index].toStringAsFixed(2)}",
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -176,14 +226,14 @@ class _EarningsPageState extends State<EarningsPage> {
               const Text(
                 "Gráfico de Ganhos (Últimas 6 Semanas):",
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Colors.black,
                   fontSize: 18,
                 ),
               ),
               const SizedBox(height: 10),
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.indigo,
+                  color: const Color.fromRGBO(0, 40, 30, 1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 width: double.infinity,
@@ -201,7 +251,8 @@ class _EarningsPageState extends State<EarningsPage> {
                             if (value % 10 == 0) {
                               return Text(
                                 value.toStringAsFixed(0),
-                                style: TextStyle(color: Colors.white, fontSize: 12),
+                                style: const TextStyle(
+                                    color: Colors.white, fontSize: 12),
                               );
                             }
                             return Container();
@@ -225,12 +276,14 @@ class _EarningsPageState extends State<EarningsPage> {
                                 axisSide: meta.axisSide,
                                 space: 15,
                                 child: Transform.translate(
-                                  offset: Offset(0, 15), // Mover a legenda para baixo
+                                  offset: const Offset(0, 15),
                                   child: Transform.rotate(
                                     angle: -0.7854,
                                     child: Text(
                                       weekDates[weekIndex],
-                                      style: TextStyle(color: Colors.white, fontSize: 12),
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12),
                                       textAlign: TextAlign.center,
                                     ),
                                   ),
@@ -250,12 +303,13 @@ class _EarningsPageState extends State<EarningsPage> {
                       LineChartBarData(
                         spots: lineChartData,
                         isCurved: false,
-                        color: Colors.blue,
+                        color: const Color.fromRGBO(185, 150, 100, 1),
                         barWidth: 3,
                         dotData: FlDotData(show: true),
                         belowBarData: BarAreaData(
                           show: true,
-                          color: Colors.blue.withOpacity(0.3),
+                          color: const Color.fromRGBO(185, 150, 100, 1)
+                              .withOpacity(0.3),
                         ),
                       ),
                     ],
@@ -266,16 +320,18 @@ class _EarningsPageState extends State<EarningsPage> {
                 ),
               ),
             ],
+          )
+              : const Center(
+            child: Text(
+              "Nenhum dado de ganho disponível",
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 18,
+              ),
+            ),
           ),
         ),
       ),
     );
   }
-}
-
-class WeeklyEarnings {
-  final String week;
-  final double amount;
-
-  WeeklyEarnings(this.week, this.amount);
 }
