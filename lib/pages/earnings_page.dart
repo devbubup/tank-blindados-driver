@@ -58,8 +58,8 @@ class _EarningsPageState extends State<EarningsPage> {
                   : null;
 
               if (amount != null && earningDate != null) {
-                if (earningDate.isAfter(fiveWeeksAgo)) {
-                  int weekNumber = ((currentWeekStart.difference(earningDate).inDays) / 7).floor() + 1;
+                if (earningDate.isAfter(fiveWeeksAgo) || earningDate.isAtSameMomentAs(currentWeekStart)) {
+                  int weekNumber = ((currentWeekStart.difference(earningDate).inDays) / 7).floor();
 
                   if (weekNumber >= 0 && weekNumber < 6) {
                     weeklyEarnings[weekNumber] =
@@ -117,6 +117,7 @@ class _EarningsPageState extends State<EarningsPage> {
     return Scaffold(
       backgroundColor: const Color.fromRGBO(255, 255, 255, 1),
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text(
           "Ganhos",
           style: TextStyle(

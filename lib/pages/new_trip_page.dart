@@ -12,6 +12,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../global/global_var.dart';
 import '../widgets/loading_dialog.dart';
 import '../widgets/payment_dialog.dart';
+import 'home_page.dart';
 
 class NewTripPage extends StatefulWidget {
   final TripDetails? newTripDetailsInfo;
@@ -310,7 +311,86 @@ class _NewTripPageState extends State<NewTripPage> {
   void initState() {
     super.initState();
     saveDriverDataToTripInfo();
+    listenForTripStatusChanges();
   }
+
+  void listenForTripStatusChanges() {
+    FirebaseDatabase.instance.ref().child("tripRequests").child(widget.newTripDetailsInfo!.tripID!).child("status").onValue.listen((event) {
+      String tripStatus = event.snapshot.value.toString();
+
+      if (tripStatus == "cancelado") {
+        handleTripCancellation();
+      }
+    });
+  }
+
+  void handleTripCancellation() async {
+    // Update fareAmount to 0.0 in the database
+    await FirebaseDatabase.instance.ref().child("tripRequests").child(widget.newTripDetailsInfo!.tripID!).child("fareAmount").set("0.0");
+
+    // Cancel any active listeners
+    positionStreamNewTripPage?.cancel();
+
+    // Show cancellation dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Viagem Cancelada"),
+          content: const Text("O usuário cancelou a viagem."),
+          backgroundColor: const Color.fromRGBO(0, 40, 30, 0.9),
+          titleTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          contentTextStyle: const TextStyle(color: Colors.white),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                navigateToHomePage();
+              },
+              child: const Text("OK", style: TextStyle(color: Color.fromRGBO(185, 150, 100, 1))),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void navigateToHomePage() async {
+    showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (BuildContext context) => LoadingDialog(
+        messageText: 'Aguarde..',
+      ),
+    );
+
+    var driverCurrentLocationLatLng = LatLng(driverCurrentPosition!.latitude, driverCurrentPosition!.longitude);
+
+    var directionDetailsStartTripInfo = await CommonMethods.getDirectionDetailsFromAPI(
+      driverCurrentLocationLatLng, //pickup
+      widget.newTripDetailsInfo!.dropOffLatLng!, //destination
+    );
+
+    if (directionDetailsStartTripInfo != null) {
+      initialFareAmount = await cMethods.calculateFareAmount(directionDetailsStartTripInfo);
+    }
+
+    var fare = 0.0;
+
+    await FirebaseDatabase.instance.ref().child("tripRequests").child(widget.newTripDetailsInfo!.tripID!).child("fareAmount").set(fare.toString());
+
+    await FirebaseDatabase.instance.ref().child("tripRequests").child(widget.newTripDetailsInfo!.tripID!).child("status").set("cancelado");
+
+    positionStreamNewTripPage!.cancel();
+
+    Navigator.pop(context);
+
+    //dialog for collecting fare amount
+    displayPaymentDialog(fare);
+  }
+
 
   @override
   void dispose() {

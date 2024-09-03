@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Drivers App</string>
+	<string>Motoristas Guard</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -33,9 +33,9 @@
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>We need your location to find the users near you.</string>
+	<string>We need to access your location. It will be used to connect you to the nearest users and ride requests.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
-	<string>We need your location to find users near you.</string>
+	<string>We need to access your location. It will be used to connect you to the nearest users and ride requests..</string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

@@ -93,8 +93,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     'Sedan Prime': ['BMW 320i', 'BMW 530i', 'BMW 740i', 'MERCEDES E300', 'MERCEDES S500', 'MERCEDES C300'],
     'SUV Especial': ['COROLLA CROSS', 'JEEP COMPASS', 'KIA SORENTO', 'VOLKSWAGEN TAOS'],
     'SUV Prime': ['JEEP COMMANDER', 'MITSUBISHI PAJERO', 'TOYOTA SW4', 'VOLKSWAGEN TIGUAN'],
-    'Mini Van': ['MINI VAN'],
-    'Van': ['VAN']
   };
 
   List<String> years = List.generate(7, (index) => (2018 + index).toString());
@@ -355,16 +353,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
         builder: (BuildContext context) => LoadingDialog(messageText: "Fazendo upload..."),
       );
 
-      String imageIDName = DateTime.now().millisecondsSinceEpoch.toString();
-      String imageURL = await uploadImage(File(imageFile!.path), imageIDName);
+      // Criar o usuário no Firebase Auth
+      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: emailTextEditingController.text.trim(),
+        password: passwordTextEditingController.text.trim(),
+      );
 
-      final User? userFirebase = FirebaseAuth.instance.currentUser;
+      final User? userFirebase = userCredential.user;
 
       if (userFirebase == null) {
         Navigator.pop(context);
-        cMethods.displaySnackBar("Usuário não encontrado.", context);
+        cMethods.displaySnackBar("Erro ao criar usuário.", context);
         return;
       }
+
+      // Upload da imagem
+      String imageIDName = DateTime.now().millisecondsSinceEpoch.toString();
+      String imageURL = await uploadImage(File(imageFile!.path), imageIDName);
 
       DatabaseReference usersRef = FirebaseDatabase.instance.ref().child("drivers").child(userFirebase.uid);
 
@@ -378,7 +383,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         "blockStatus": "yes",
       };
 
-      await usersRef.update(driverPersonalInfo);
+      await usersRef.set(driverPersonalInfo);
       Navigator.pop(context);
     } catch (e) {
       Navigator.pop(context);

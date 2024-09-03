@@ -17,7 +17,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final Completer<GoogleMapController> googleMapCompleterController = Completer<GoogleMapController>();
+  Completer<GoogleMapController> googleMapCompleterController = Completer<GoogleMapController>();
   GoogleMapController? controllerGoogleMap;
   Position? currentPositionOfDriver;
   Color colorToShow = const Color.fromRGBO(30, 170, 70, 1);
@@ -131,9 +131,13 @@ class _HomePageState extends State<HomePage> {
     tripStatusSubscription = newTripRequestReference!.onValue.listen((event) {
       String? tripStatus = event.snapshot.value?.toString();
       print("Trip status updated: $tripStatus");
+
       if (tripStatus == "ended") {
         print("Trip has ended, calling resetHomePageState()");
         resetHomePageState();
+      } else if (tripStatus == "cancelado" || tripStatus == "cancelled") {
+        print("Trip has been cancelled, showing alert...");
+        showUserCancelledTripAlert();
       } else if (tripStatus != null) {
         print("Trip status is not ended: $tripStatus");
       } else {
@@ -143,25 +147,58 @@ class _HomePageState extends State<HomePage> {
   }
 
   void resetHomePageState() {
-    print("Resetting HomePage state after trip ended.");
-
+    print("Entering resetHomePageState method.");
     if (isDriverAvailable) {
-      goOfflineNow(); // Vai offline automaticamente quando a corrida termina
+      print("Driver is online, setting driver to offline...");
+      goOfflineNow(); // Vai offline automaticamente quando a corrida termina ou é cancelada
       setState(() {
         isDriverAvailable = false;
         colorToShow = const Color.fromRGBO(30, 170, 70, 1);
         titleToShow = "FICAR ONLINE";
-        print("Driver state set to offline");
+        print("Driver state set to offline in UI.");
       });
+    } else {
+      print("Driver is already offline, no need to go offline again.");
     }
 
+    // Reiniciar o controlador do Google Map
+    controllerGoogleMap?.dispose();
+    googleMapCompleterController = Completer<GoogleMapController>();
+
+    // Navegar para a HomePage e remover todas as rotas anteriores
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (context) => const HomePage()),
           (Route<dynamic> route) => false,
     ).then((_) {
-      print("Navigated to HomePage after trip ended");
+      print("Successfully navigated back to HomePage and reset.");
+    }).catchError((error) {
+      print("Error navigating back to HomePage: $error");
     });
+  }
+
+  void showUserCancelledTripAlert() {
+    print("Displaying cancellation alert...");
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Evita que o usuário feche o diálogo clicando fora
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Viagem Cancelada"),
+          content: const Text("O usuário cancelou a viagem."),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                print("User acknowledged cancellation alert");
+                resetHomePageState();
+              },
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   saveDriverInfoToDatabase() async {
@@ -183,6 +220,8 @@ class _HomePageState extends State<HomePage> {
 
     driverRef.set(driverTripDataMap).then((_) {
       print("Driver trip details saved to database");
+    }).catchError((error) {
+      print("Failed to save driver trip details: $error");
     });
   }
 
@@ -199,6 +238,8 @@ class _HomePageState extends State<HomePage> {
       carModel = (snap.snapshot.value as Map)["car_details"]["carModel"];
       carNumber = (snap.snapshot.value as Map)["car_details"]["carNumber"];
       print("Driver info retrieved: $driverName, $driverPhone");
+    }).catchError((error) {
+      print("Failed to retrieve driver info: $error");
     });
 
     initializePushNotificationSystem();
