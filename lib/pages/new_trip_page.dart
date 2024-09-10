@@ -447,8 +447,14 @@ class _NewTripPageState extends State<NewTripPage> {
                     }
                   }
                 },
-                label: const Text("Abrir com Google Maps"),
-                icon: const Icon(Icons.directions),
+                label: const Text(
+                  "Abrir com Google Maps",
+                  style: TextStyle(color: Colors.white), // Define o texto como branco
+                ),
+                icon: const Icon(
+                  Icons.directions,
+                  color: Colors.white, // Define o ícone como branco
+                ),
                 backgroundColor: const Color.fromRGBO(0, 40, 30, 1), // Cor verde
               ),
             ),

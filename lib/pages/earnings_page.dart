@@ -58,8 +58,9 @@ class _EarningsPageState extends State<EarningsPage> {
                   : null;
 
               if (amount != null && earningDate != null) {
+                // Corrigindo a forma como o número da semana é calculado
                 if (earningDate.isAfter(fiveWeeksAgo) || earningDate.isAtSameMomentAs(currentWeekStart)) {
-                  int weekNumber = ((currentWeekStart.difference(earningDate).inDays) / 7).floor();
+                  int weekNumber = currentWeekStart.difference(earningDate).inDays ~/ 7;
 
                   if (weekNumber >= 0 && weekNumber < 6) {
                     weeklyEarnings[weekNumber] =
