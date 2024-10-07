@@ -39,32 +39,34 @@ class _LoginScreenState extends State<LoginScreen> {
       builder: (BuildContext context) => LoadingDialog(messageText: "Realizando seu login..."),
     );
 
-    final User? userFirebase = (await FirebaseAuth.instance.signInWithEmailAndPassword(
-      email: emailTextEditingController.text.trim(),
-      password: passwordTextEditingController.text.trim(),
-    ).catchError((errorMsg) {
+    try {
+      final User? userFirebase = (await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailTextEditingController.text.trim(),
+        password: passwordTextEditingController.text.trim(),
+      )).user;
+
+      if (!context.mounted) return;
       Navigator.pop(context);
-      cMethods.displaySnackBar(errorMsg.toString(), context);
-    })).user;
 
-    if (!context.mounted) return;
-    Navigator.pop(context);
-
-    if (userFirebase != null) {
-      DatabaseReference usersRef = FirebaseDatabase.instance.ref().child("drivers").child(userFirebase.uid);
-      usersRef.once().then((snap) {
-        if (snap.snapshot.value != null) {
-          if ((snap.snapshot.value as Map)["blockStatus"] == "no") {
-            Navigator.push(context, MaterialPageRoute(builder: (c) => const Dashboard()));
+      if (userFirebase != null) {
+        DatabaseReference usersRef = FirebaseDatabase.instance.ref().child("drivers").child(userFirebase.uid);
+        usersRef.once().then((snap) {
+          if (snap.snapshot.value != null) {
+            if ((snap.snapshot.value as Map)["blockStatus"] == "no") {
+              Navigator.push(context, MaterialPageRoute(builder: (c) => const Dashboard()));
+            } else {
+              FirebaseAuth.instance.signOut();
+              cMethods.displaySnackBar("Sua conta foi bloqueada. Para mais informações, entre em contato com email@gmail.com", context);
+            }
           } else {
             FirebaseAuth.instance.signOut();
-            cMethods.displaySnackBar("Sua conta foi bloqueada. Para mais informações, entre em contato com email@gmail.com", context);
+            cMethods.displaySnackBar("Sua conta de motorista não existe.", context);
           }
-        } else {
-          FirebaseAuth.instance.signOut();
-          cMethods.displaySnackBar("Sua conta de motorista não existe.", context);
-        }
-      });
+        });
+      }
+    } catch (errorMsg) {
+      Navigator.pop(context);
+      cMethods.displaySnackBar(errorMsg.toString(), context);
     }
   }
 

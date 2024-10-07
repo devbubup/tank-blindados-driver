@@ -65,6 +65,7 @@ class _TripsPageState extends State<TripsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text(
           "Informações do Motorista",
           style: TextStyle(

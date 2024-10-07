@@ -16,6 +16,7 @@ class _TripsHistoryPageState extends State<TripsHistoryPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text(
           'Histórico de Corridas',
           style: TextStyle(
