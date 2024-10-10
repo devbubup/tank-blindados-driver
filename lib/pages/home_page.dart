@@ -28,7 +28,7 @@ class _HomePageState extends State<HomePage> {
   StreamSubscription<DatabaseEvent>? tripRequestSubscription;
   StreamSubscription<DatabaseEvent>? tripStatusSubscription;
   String? currentTripID;
-
+  StreamSubscription<DatabaseEvent>? driverStatusSubscription;
   StreamSubscription<Position>? positionStreamHomePage;
 
   @override
@@ -36,6 +36,8 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     initializePushNotificationSystem();
     retrieveCurrentDriverInfo();
+    getDriverOnlineStatus();
+    listenToDriverOnlineStatus();
     print("HomePage initState called");
   }
 
@@ -44,6 +46,7 @@ class _HomePageState extends State<HomePage> {
     tripRequestSubscription?.cancel();
     tripStatusSubscription?.cancel();
     positionStreamHomePage?.cancel();
+    driverStatusSubscription?.cancel(); // Cancele o listener
     super.dispose();
     print("HomePage disposed");
   }
@@ -67,12 +70,30 @@ class _HomePageState extends State<HomePage> {
     print("Attempting to go online...");
     Geofire.initialize("onlineDrivers");
 
-    Geofire.setLocation(
-      FirebaseAuth.instance.currentUser!.uid,
-      currentPositionOfDriver!.latitude,
-      currentPositionOfDriver!.longitude,
-    ).then((_) {
+    String driverId = FirebaseAuth.instance.currentUser!.uid;
+
+    if (currentPositionOfDriver == null) {
+      print("Current position is null. Cannot go online.");
+      return;
+    }
+
+    double latitude = currentPositionOfDriver!.latitude;
+    double longitude = currentPositionOfDriver!.longitude;
+
+    // Atualiza o status isOnline no banco de dados
+    FirebaseDatabase.instance.ref().child('drivers').child(driverId).update({
+      'isOnline': true,
+    });
+
+    // Define a localização
+    Geofire.setLocation(driverId, latitude, longitude).then((_) {
       print("Driver is now online and location saved successfully!");
+
+      // Configura o onDisconnect
+      DatabaseReference driverLocationRef = FirebaseDatabase.instance.ref().child("onlineDrivers").child(driverId);
+      driverLocationRef.onDisconnect().remove().then((_) {
+        print("Driver location will be removed when app disconnects.");
+      });
     });
 
     setState(() {
@@ -86,10 +107,41 @@ class _HomePageState extends State<HomePage> {
     setAndGetLocationUpdates();
   }
 
+
+  void listenToDriverOnlineStatus() {
+    String driverId = FirebaseAuth.instance.currentUser!.uid;
+    DatabaseReference driverStatusRef = FirebaseDatabase.instance.ref().child('drivers').child(driverId).child('isOnline');
+
+    driverStatusSubscription = driverStatusRef.onValue.listen((event) {
+      if (event.snapshot.value != null) {
+        bool isOnline = event.snapshot.value as bool;
+        setState(() {
+          isDriverAvailable = isOnline;
+          colorToShow = isOnline ? const Color.fromRGBO(240, 75, 20, 1) : const Color.fromRGBO(30, 170, 70, 1);
+          titleToShow = isOnline ? "FICAR OFFLINE" : "FICAR ONLINE";
+        });
+      }
+    });
+  }
+
   void goOfflineNow() {
     print("Attempting to go offline...");
-    Geofire.removeLocation(FirebaseAuth.instance.currentUser!.uid).then((_) {
+
+    String driverId = FirebaseAuth.instance.currentUser!.uid;
+
+    // Atualiza o status isOnline no banco de dados
+    FirebaseDatabase.instance.ref().child('drivers').child(driverId).update({
+      'isOnline': false,
+    });
+
+    Geofire.removeLocation(driverId).then((_) {
       print("Driver is now offline and location removed successfully!");
+
+      // Cancela o onDisconnect
+      DatabaseReference driverLocationRef = FirebaseDatabase.instance.ref().child("onlineDrivers").child(driverId);
+      driverLocationRef.onDisconnect().cancel().then((_) {
+        print("onDisconnect cancellation successful.");
+      });
     });
 
     tripRequestSubscription?.cancel();
@@ -104,6 +156,24 @@ class _HomePageState extends State<HomePage> {
       print("Driver state set to offline");
     });
   }
+
+
+  void getDriverOnlineStatus() async {
+    String driverId = FirebaseAuth.instance.currentUser!.uid;
+    DatabaseReference driverStatusRef = FirebaseDatabase.instance.ref().child('drivers').child(driverId).child('isOnline');
+
+    DataSnapshot snapshot = await driverStatusRef.once() as DataSnapshot;
+
+    if (snapshot.value != null) {
+      bool isOnline = snapshot.value as bool;
+      setState(() {
+        isDriverAvailable = isOnline;
+        colorToShow = isOnline ? const Color.fromRGBO(240, 75, 20, 1) : const Color.fromRGBO(30, 170, 70, 1);
+        titleToShow = isOnline ? "FICAR OFFLINE" : "FICAR ONLINE";
+      });
+    }
+  }
+
 
   void setAndGetLocationUpdates() {
     print("Setting and getting location updates...");
