@@ -113,20 +113,37 @@ class _SignUpScreenState extends State<SignUpScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ),
           title: const Text(
             "Leia o Contrato!",
-            style: TextStyle(color: Colors.red),
+            style: TextStyle(
+              color: Color(0xFFB99664), // Cor de destaque para o título
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           content: const Text(
             "Por favor, leia e aceite o contrato antes de continuar com o registro. Existem regras no contrato que, em caso de não cumprimento, podem levar o motorista à suspensão ou banimento do app.",
-            style: TextStyle(color: Colors.black87),
+            style: TextStyle(
+              color: Colors.black87,
+              fontSize: 16,
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text("OK", style: TextStyle(color: Color.fromRGBO(20, 125, 240, 1))),
+              child: const Text(
+                "OK",
+                style: TextStyle(
+                  color: Color(0xFF00281E), // Cor do texto do botão OK
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
             ),
           ],
         );
