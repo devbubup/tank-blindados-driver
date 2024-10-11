@@ -10,23 +10,117 @@ class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<LoginScreen> createState() => LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class LoginScreenState extends State<LoginScreen> {
   TextEditingController emailTextEditingController = TextEditingController();
   TextEditingController passwordTextEditingController = TextEditingController();
   CommonMethods cMethods = CommonMethods();
+
+  @override
+  void dispose() {
+    emailTextEditingController.dispose();
+    passwordTextEditingController.dispose();
+    super.dispose();
+  }
 
   checkIfNetworkIsAvailable() {
     signInFormValidation();
   }
 
+  void _forgotPassword(BuildContext context) async {
+    String email = "";
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.0),
+        ),
+        title: const Text(
+          "Redefinir Senha",
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF00281E),
+          ),
+        ),
+        content: TextField(
+          onChanged: (value) {
+            email = value;
+          },
+          keyboardType: TextInputType.emailAddress,
+          decoration: const InputDecoration(
+            labelText: "Digite seu email",
+            labelStyle: TextStyle(
+              fontSize: 16,
+              color: Color(0xFFB99664),
+            ),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: Color(0xFFB99664)),
+            ),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: Color(0xFF00281E)),
+            ),
+          ),
+          style: const TextStyle(
+            color: Colors.black,
+            fontSize: 18,
+          ),
+        ),
+        actions: [
+          TextButton(
+            child: const Text(
+              "Cancelar",
+              style: TextStyle(
+                color: Color(0xFF00281E),
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            onPressed: () => Navigator.pop(context),
+          ),
+          TextButton(
+            child: const Text(
+              "Enviar",
+              style: TextStyle(
+                color: Color(0xFFB99664),
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            onPressed: () async {
+              Navigator.pop(context);
+              if (email.isNotEmpty && email.contains("@")) {
+                try {
+                  await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+                  cMethods.displaySnackBar("Link de redefinição de senha enviado para $email.", context);
+                } catch (e) {
+                  cMethods.displaySnackBar("Erro: Não foi possível enviar o link para o email.", context);
+                }
+              } else {
+                cMethods.displaySnackBar("Insira um email válido.", context);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   signInFormValidation() {
-    if (!emailTextEditingController.text.contains("@")) {
+    final String email = emailTextEditingController.text.trim();
+    final String password = passwordTextEditingController.text.trim();
+
+    final RegExp emailRegExp = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+
+    if (email.isEmpty || !emailRegExp.hasMatch(email)) {
       cMethods.displaySnackBar("Insira um email válido.", context);
-    } else if (passwordTextEditingController.text.trim().length < 5) {
+    } else if (password.length < 6) {
       cMethods.displaySnackBar("Sua senha deve ter pelo menos 6 caracteres.", context);
+    }  else if (password.length > 20) {
+      cMethods.displaySnackBar("Sua senha deve ter no máximo 20 caracteres.", context);
     } else {
       signInUser();
     }
@@ -73,7 +167,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFFFF), // Cor de fundo branco
+      backgroundColor: const Color(0xFFFFFFFF),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -83,33 +177,34 @@ class _LoginScreenState extends State<LoginScreen> {
               Center(
                 child: Image.asset(
                   "assets/images/logo.png",
+                  height: 200,
                   width: 220,
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 30),
               const Text(
-                "Faça o login de motorista",
+                "Login de Motorista",
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF00281E), // Azul marinho
+                  color: Color(0xFF00281E),
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 30),
               TextField(
                 controller: emailTextEditingController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
                   labelText: "Email",
                   labelStyle: TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFFB99664), // Bege
+                    fontSize: 16,
+                    color: Color(0xFFB99664),
                   ),
                   enabledBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFFB99664)), // Bege
+                    borderSide: BorderSide(color: Color(0xFFB99664)),
                   ),
                   focusedBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF00281E)), // Azul marinho
+                    borderSide: BorderSide(color: Color(0xFF00281E)),
                   ),
                 ),
                 style: const TextStyle(
@@ -125,26 +220,40 @@ class _LoginScreenState extends State<LoginScreen> {
                 decoration: InputDecoration(
                   labelText: "Senha",
                   labelStyle: TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFFB99664), // Bege
+                    fontSize: 16,
+                    color: Color(0xFFB99664),
                   ),
                   enabledBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFFB99664)), // Bege
+                    borderSide: BorderSide(color: Color(0xFFB99664)),
                   ),
                   focusedBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF00281E)), // Azul marinho
+                    borderSide: BorderSide(color: Color(0xFF00281E)),
                   ),
                 ),
                 style: const TextStyle(
                   color: Colors.black,
-                  fontSize: 16,
+                  fontSize: 18,
                 ),
               ),
-              const SizedBox(height: 50),
+              const SizedBox(height: 30),
+              Center(
+                child: GestureDetector(
+                  onTap: () => _forgotPassword(context),
+                  child: const Text(
+                    "Esqueceu a senha?",
+                    style: TextStyle(
+                      color: Color(0xFF00281E),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 85),
               ElevatedButton(
                 onPressed: checkIfNetworkIsAvailable,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00281E), // Azul marinho
+                  backgroundColor: const Color(0xFF00281E),
                   padding: const EdgeInsets.symmetric(horizontal: 70, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -153,9 +262,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: const Text(
                   "Login",
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFFFFFFFF), // Branco
+                    color: Color(0xFFFFFFFF),
                   ),
                 ),
               ),
@@ -166,13 +275,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     Navigator.push(context, MaterialPageRoute(builder: (c) => const SignUpScreen()));
                   },
                   child: const Text(
-                    "Não tem uma conta de motorista? Registre aqui!",
+                    "Não tem uma conta? Registre aqui!",
                     style: TextStyle(
-                      color: Color(0xFF00281E), // Azul marinho
+                      color: Color(0xFF00281E),
                     ),
                   ),
                 ),
               ),
+              const SizedBox(height: 30),
             ],
           ),
         ),
