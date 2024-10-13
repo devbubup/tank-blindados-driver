@@ -113,16 +113,16 @@ class LoginScreenState extends State<LoginScreen> {
     final String email = emailTextEditingController.text.trim();
     final String password = passwordTextEditingController.text.trim();
 
-    final RegExp emailRegExp = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+    final RegExp emailRegExp = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}');
 
-    if (email.isEmpty || !emailRegExp.hasMatch(email)) {
-      cMethods.displaySnackBar("Insira um email válido.", context);
+        if (email.isEmpty || !emailRegExp.hasMatch(email)) {
+    cMethods.displaySnackBar("Insira um email válido.", context);
     } else if (password.length < 6) {
-      cMethods.displaySnackBar("Sua senha deve ter pelo menos 6 caracteres.", context);
-    }  else if (password.length > 20) {
-      cMethods.displaySnackBar("Sua senha deve ter no máximo 20 caracteres.", context);
+    cMethods.displaySnackBar("Sua senha deve ter pelo menos 6 caracteres.", context);
+    } else if (password.length > 20) {
+    cMethods.displaySnackBar("Sua senha deve ter no máximo 20 caracteres.", context);
     } else {
-      signInUser();
+    signInUser();
     }
   }
 
@@ -160,7 +160,7 @@ class LoginScreenState extends State<LoginScreen> {
       }
     } catch (errorMsg) {
       Navigator.pop(context);
-      cMethods.displaySnackBar(errorMsg.toString(), context);
+      cMethods.displaySnackBar("Erro: $errorMsg", context);
     }
   }
 
@@ -194,16 +194,16 @@ class LoginScreenState extends State<LoginScreen> {
               TextField(
                 controller: emailTextEditingController,
                 keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: "Email",
                   labelStyle: TextStyle(
                     fontSize: 16,
                     color: Color(0xFFB99664),
                   ),
-                  enabledBorder: const UnderlineInputBorder(
+                  enabledBorder: UnderlineInputBorder(
                     borderSide: BorderSide(color: Color(0xFFB99664)),
                   ),
-                  focusedBorder: const UnderlineInputBorder(
+                  focusedBorder: UnderlineInputBorder(
                     borderSide: BorderSide(color: Color(0xFF00281E)),
                   ),
                 ),
@@ -217,16 +217,16 @@ class LoginScreenState extends State<LoginScreen> {
                 controller: passwordTextEditingController,
                 obscureText: true,
                 keyboardType: TextInputType.text,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: "Senha",
                   labelStyle: TextStyle(
                     fontSize: 16,
                     color: Color(0xFFB99664),
                   ),
-                  enabledBorder: const UnderlineInputBorder(
+                  enabledBorder: UnderlineInputBorder(
                     borderSide: BorderSide(color: Color(0xFFB99664)),
                   ),
-                  focusedBorder: const UnderlineInputBorder(
+                  focusedBorder: UnderlineInputBorder(
                     borderSide: BorderSide(color: Color(0xFF00281E)),
                   ),
                 ),
