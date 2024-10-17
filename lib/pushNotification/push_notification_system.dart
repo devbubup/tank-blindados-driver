@@ -62,8 +62,10 @@ class PushNotificationSystem {
 
     isTripInProgress = true;
 
+    final currentContext = context; // Captura o contexto atual antes de operações assíncronas
+
     showDialog(
-      context: context,
+      context: currentContext,
       barrierDismissible: false,
       builder: (BuildContext context) => LoadingDialog(messageText: "Coletando detalhes..."),
     );
@@ -71,7 +73,7 @@ class PushNotificationSystem {
     DatabaseReference tripRequestsRef = FirebaseDatabase.instance.ref().child("tripRequests").child(tripID);
 
     tripRequestsRef.once().then((dataSnapshot) {
-      Navigator.pop(context);
+      Navigator.pop(currentContext); // Usa o contexto capturado anteriormente
 
       if (dataSnapshot.snapshot.value != null) {
         Map<String, dynamic> valueMap = Map<String, dynamic>.from(dataSnapshot.snapshot.value as Map);
@@ -89,13 +91,13 @@ class PushNotificationSystem {
         tripDetailsInfo.pickUpLatLng = LatLng(pickUpLat, pickUpLng);
         tripDetailsInfo.pickupAddress = valueMap["pickUpAddress"] ?? "Endereço Desconhecido";
         tripDetailsInfo.dropOffLatLng = LatLng(dropOffLat, dropOffLng);
-        tripDetailsInfo.dropOffAddress = valueMap["dropOffAddress"] ?? "Endereço Deconhecido";
+        tripDetailsInfo.dropOffAddress = valueMap["dropOffAddress"] ?? "Endereço Desconhecido";
         tripDetailsInfo.userName = valueMap["userName"] ?? "Unknown user";
         tripDetailsInfo.userPhone = valueMap["userPhone"] ?? "Unknown phone";
         tripDetailsInfo.tripID = tripID;
 
         showDialog(
-          context: context,
+          context: currentContext, // Usa o contexto capturado anteriormente
           builder: (BuildContext context) => NotificationDialog(tripDetailsInfo: tripDetailsInfo),
         ).then((_) {
           // Reset the trip in progress status when the notification dialog is dismissed
@@ -104,7 +106,7 @@ class PushNotificationSystem {
       } else {
         // Handle null case appropriately, e.g., show an error dialog
         showDialog(
-          context: context,
+          context: currentContext, // Usa o contexto capturado anteriormente
           builder: (BuildContext context) => AlertDialog(
             title: Text('Erro'),
             content: Text('Falha nas informações da viagem.'),
@@ -121,9 +123,9 @@ class PushNotificationSystem {
         );
       }
     }).catchError((error) {
-      Navigator.pop(context);
+      Navigator.pop(currentContext); // Usa o contexto capturado anteriormente
       showDialog(
-        context: context,
+        context: currentContext, // Usa o contexto capturado anteriormente
         builder: (BuildContext context) => AlertDialog(
           title: Text('Error'),
           content: Text('An error occurred: $error'),

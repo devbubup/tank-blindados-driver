@@ -4,25 +4,18 @@ import 'package:drivers_app/pages/profile_page.dart';
 import 'package:drivers_app/pages/trips_page.dart';
 import 'package:flutter/material.dart';
 
-
-class Dashboard extends StatefulWidget
-{
+class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
 
   @override
   State<Dashboard> createState() => _DashboardState();
 }
 
-
-
-class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMixin
-{
+class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMixin {
   TabController? controller;
   int indexSelected = 0;
 
-
-  onBarItemClicked(int i)
-  {
+  onBarItemClicked(int i) {
     setState(() {
       indexSelected = i;
       controller!.index = indexSelected;
@@ -31,22 +24,18 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-
     controller = TabController(length: 4, vsync: this);
   }
 
   @override
   void dispose() {
-    // TODO: implement dispose
     controller!.dispose();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context)
-  {
+  Widget build(BuildContext context) {
     return Scaffold(
       body: TabBarView(
         physics: const NeverScrollableScrollPhysics(),
@@ -59,33 +48,32 @@ class _DashboardState extends State<Dashboard> with SingleTickerProviderStateMix
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        items: const
-        [
+        items: const [
           BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: "Início"
+            icon: Icon(Icons.home),
+            label: "Início",
           ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.credit_card),
-              label: "Resultados"
+            icon: Icon(Icons.credit_card),
+            label: "Resultados",
           ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.account_tree),
-              label: "Viagens"
+            icon: Icon(Icons.account_tree),
+            label: "Viagens",
           ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.person),
-              label: "Perfil"
+            icon: Icon(Icons.person),
+            label: "Perfil",
           ),
         ],
         currentIndex: indexSelected,
-        //backgroundColor: Colors.grey,
-        unselectedItemColor: Colors.black,
-        selectedItemColor: Colors.blueAccent,
+        unselectedItemColor: Color.fromRGBO(0, 40, 30, 1),
+        selectedItemColor: Color.fromRGBO(30, 170, 70, 1),
         showSelectedLabels: true,
         selectedLabelStyle: const TextStyle(fontSize: 12),
         type: BottomNavigationBarType.fixed,
         onTap: onBarItemClicked,
+        backgroundColor: Color.fromRGBO(255, 255, 255, 1), // Fundo do BottomNavigationBar branco
       ),
     );
   }

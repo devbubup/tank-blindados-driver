@@ -1,6 +1,7 @@
 import 'package:drivers_app/authentication/login_screen.dart';
 import 'package:drivers_app/global/global_var.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -35,6 +36,19 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: const Text(
+          "Perfil",
+          style: TextStyle(
+            color: Color.fromRGBO(185, 150, 100, 1),
+          ),
+        ),
+        backgroundColor: const Color.fromRGBO(0, 40, 30, 1),
+        iconTheme: const IconThemeData(
+          color: Color.fromRGBO(185, 150, 100, 1),
+        ),
+      ),
       body: Center(
         child: SingleChildScrollView(
           child: Column(
@@ -86,8 +100,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   Navigator.push(context, MaterialPageRoute(builder: (c) => const LoginScreen()));
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue.shade900,
-                  padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 18),
+                  backgroundColor: const Color.fromRGBO(30, 170, 70, 1),
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(4), // Menos arredondado
                   ),
@@ -97,11 +111,80 @@ class _ProfilePageState extends State<ProfilePage> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
               ),
+              const SizedBox(height: 12),
+              // Delete account button
+              ElevatedButton(
+                onPressed: () {
+                  showDeleteAccountDialog(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromRGBO(240, 75, 20, 1),
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4), // Menos arredondado
+                  ),
+                ),
+                child: const Text(
+                  "Deletar Conta",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  void showDeleteAccountDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Confirmação de Deleção"),
+          content: const Text("Você tem certeza que deseja deletar sua conta? Essa ação não pode ser desfeita."),
+          actions: [
+            TextButton(
+              child: const Text("Cancelar"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text("Deletar"),
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await deleteAccount();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> deleteAccount() async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        // Delete user from Firebase Realtime Database
+        DatabaseReference userRef = FirebaseDatabase.instance.ref().child('drivers').child(user.uid);
+        await userRef.remove();
+
+        // Delete user from Firebase Auth
+        await user.delete();
+
+        // Sign out and navigate to login screen
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (c) => const LoginScreen()),
+              (Route<dynamic> route) => false,
+        );
+      }
+    } catch (e) {
+      print("Error deleting account: $e");
+      // Handle the error accordingly
+    }
   }
 
   Widget buildTextField({required TextEditingController controller, required IconData icon}) {
@@ -116,7 +199,7 @@ class _ProfilePageState extends State<ProfilePage> {
           filled: true,
           fillColor: Colors.white,
           border: OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.black, width: 2),
+            borderSide: const BorderSide(color: Colors.black, width: 2),
             borderRadius: BorderRadius.circular(4), // Menos arredondado
           ),
           prefixIcon: Icon(icon, color: Colors.black),
